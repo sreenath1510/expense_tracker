@@ -1,0 +1,15 @@
+# Local Python virtualenvs — Vercel installs from requirements.txt
+.venv
+backend/.venv
+
+# Local SQLite data + backups must never ship
+*.db
+*.db-*
+backend/finance.db
+backend/finance.db.bak-*
+
+# Build/install artifacts (Vercel rebuilds these)
+frontend/node_modules
+frontend/dist
+**/__pycache__
+**/*.pyc

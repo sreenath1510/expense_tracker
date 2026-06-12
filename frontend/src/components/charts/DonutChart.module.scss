@@ -1,0 +1,78 @@
+@use "../../styles/abstracts/index" as *;
+
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: $space-6;
+  flex-wrap: wrap;
+}
+
+.svg {
+  width: 11rem;
+  height: 11rem;
+  flex-shrink: 0;
+}
+
+.centerValue {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  fill: var(--foreground);
+}
+
+.centerLabel {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  fill: var(--muted-foreground);
+}
+
+.legend {
+  list-style: none;
+  flex: 1;
+  min-width: 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $text-sm;
+}
+
+.dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  color: var(--foreground);
+}
+
+.legendPct {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  color: var(--muted-foreground);
+}
+
+.legendValue {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+  min-width: 4.5rem;
+  text-align: right;
+}
+
+.empty {
+  padding: $space-8;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: $text-sm;
+}

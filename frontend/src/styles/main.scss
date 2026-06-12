@@ -1,0 +1,5 @@
+// Single global stylesheet entry. Imported once in main.tsx.
+// Abstracts are auto-injected via Vite's additionalData, so we only
+// need to pull in the base layer here. Component styles live as
+// co-located .module.scss files next to their components.
+@use 'base/global';

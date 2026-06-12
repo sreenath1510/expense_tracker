@@ -1,0 +1,107 @@
+// =============================================================================
+// DESIGN TOKENS  —  translated 1:1 from theme.md "Design Token System"
+// =============================================================================
+// These are the single source of truth for the visual system. Components must
+// reference these (or the CSS custom properties they feed) rather than
+// hardcoding values. This is what keeps every module visually consistent.
+
+@use 'sass:color';
+
+// -----------------------------------------------------------------------------
+// Color palette  (theme.md > Color Strategy table)
+// -----------------------------------------------------------------------------
+$color-background:        #fafafa; // Primary canvas. Warm off-white.
+$color-foreground:        #0f172a; // Primary text / inverted section bg (Slate-900)
+$color-muted:             #f1f5f9; // Secondary surfaces, subtle fills (Slate-100)
+$color-muted-foreground:  #64748b; // Secondary text, metadata (Slate-500)
+$color-accent:            #0052ff; // Electric Blue — primary action color
+$color-accent-secondary:  #4d7cff; // Gradient endpoint
+$color-accent-foreground: #ffffff; // Text on accent backgrounds
+$color-border:            #e2e8f0; // Subtle structural borders (Slate-200)
+$color-card:              #ffffff; // Elevated surfaces
+$color-ring:              #0052ff; // Focus rings
+
+// Semantic finance colors (additions, harmonized with the accent system)
+$color-positive:          #0f9d58; // Balance / savings positive
+$color-negative:          #e5484d; // Overspend / negative balance
+$color-investment:        #7c5cff; // Distinguishes investment blocks from expense
+
+// The signature gradient (theme.md)
+$gradient-accent:         linear-gradient(135deg, #{$color-accent}, #{$color-accent-secondary});
+$gradient-accent-h:       linear-gradient(to right, #{$color-accent}, #{$color-accent-secondary});
+
+// -----------------------------------------------------------------------------
+// Typography  (theme.md > Typography System)
+// -----------------------------------------------------------------------------
+$font-display: 'Calistoga', Georgia, serif;
+$font-body:    'Inter', system-ui, -apple-system, sans-serif;
+$font-mono:    'JetBrains Mono', ui-monospace, monospace;
+
+// Type scale (rem)
+$text-xs:   0.75rem;   // 12px — section labels
+$text-sm:   0.875rem;  // 14px
+$text-base: 1rem;      // 16px — body
+$text-lg:   1.125rem;  // 18px
+$text-xl:   1.25rem;   // 20px
+$text-2xl:  1.5rem;    // 24px — card titles
+$text-3xl:  1.875rem;  // 30px
+$text-4xl:  2.25rem;   // 36px
+$text-5xl:  3rem;      // 48px — section headlines
+$text-6xl:  3.75rem;   // 60px
+
+// -----------------------------------------------------------------------------
+// Spacing scale  (4px base, matching Tailwind's rhythm used in theme.md)
+// -----------------------------------------------------------------------------
+$space-1:  0.25rem;
+$space-2:  0.5rem;
+$space-3:  0.75rem;
+$space-4:  1rem;
+$space-5:  1.25rem;
+$space-6:  1.5rem;
+$space-8:  2rem;
+$space-10: 2.5rem;
+$space-12: 3rem;
+$space-16: 4rem;
+$space-20: 5rem;
+
+// -----------------------------------------------------------------------------
+// Radii  (theme.md uses rounded-lg / xl / 2xl)
+// -----------------------------------------------------------------------------
+$radius-sm:  0.375rem; // 6px
+$radius-md:  0.5rem;   // 8px
+$radius-lg:  0.75rem;  // 12px — rounded-xl
+$radius-xl:  1rem;     // 16px — rounded-2xl
+$radius-2xl: 1.5rem;   // 24px
+$radius-full: 9999px;
+
+// -----------------------------------------------------------------------------
+// Shadows  (theme.md > Shadow System table, verbatim values)
+// -----------------------------------------------------------------------------
+$shadow-sm:        0 1px 3px rgba(0, 0, 0, 0.06);
+$shadow-md:        0 4px 6px rgba(0, 0, 0, 0.07);
+$shadow-lg:        0 10px 15px rgba(0, 0, 0, 0.08);
+$shadow-xl:        0 20px 25px rgba(0, 0, 0, 0.1);
+$shadow-accent:    0 4px 14px rgba(0, 82, 255, 0.25);
+$shadow-accent-lg: 0 8px 24px rgba(0, 82, 255, 0.35);
+
+// -----------------------------------------------------------------------------
+// Layout
+// -----------------------------------------------------------------------------
+$container-max: 72rem;   // max-w-6xl
+$sidebar-width: 16rem;
+
+// -----------------------------------------------------------------------------
+// Motion  (theme.md > Effects & Animation)
+// -----------------------------------------------------------------------------
+$ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+$duration-fast: 200ms;
+$duration-base: 300ms;
+$duration-slow: 700ms;
+
+// -----------------------------------------------------------------------------
+// Breakpoints
+// -----------------------------------------------------------------------------
+$bp-sm: 640px;
+$bp-md: 768px;
+$bp-lg: 1024px;
+$bp-xl: 1280px;

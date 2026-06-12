@@ -1,0 +1,56 @@
+@use "../../styles/abstracts/index" as *;
+
+.wrap {
+  width: 100%;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-4;
+  margin-bottom: $space-3;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $text-sm;
+  color: var(--muted-foreground);
+}
+
+.swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: $radius-sm;
+}
+
+.svg {
+  width: 100%;
+  height: 15rem;
+}
+
+.grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.zero {
+  stroke: var(--muted-foreground);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.yLabel,
+.xLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--muted-foreground);
+}
+
+.empty {
+  padding: $space-8;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: $text-sm;
+}

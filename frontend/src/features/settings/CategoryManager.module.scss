@@ -1,0 +1,172 @@
+@use "../../styles/abstracts/index" as *;
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-4;
+  margin-bottom: $space-6;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: $text-xl;
+  color: var(--foreground);
+}
+
+.desc {
+  margin-top: $space-1;
+  color: var(--muted-foreground);
+  font-size: $text-sm;
+  max-width: 36rem;
+}
+
+// Blocks are laid out as a responsive grid of cards rather than one tall stack.
+.blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: $space-4;
+  align-items: start;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: $radius-lg;
+  background: var(--card);
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $duration-fast $ease-out, border-color $duration-fast $ease-out;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    border-color: rgba($color-accent, 0.25);
+  }
+}
+
+.blockHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.blockTitle {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  flex-wrap: wrap;
+}
+
+.typeChip {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: $space-1 $space-2;
+  border-radius: $radius-sm;
+  font-weight: 500;
+}
+
+.expense {
+  background: rgba($color-accent, 0.1);
+  color: var(--accent);
+}
+
+.invest {
+  background: rgba($color-investment, 0.12);
+  color: var(--investment);
+}
+
+.blockName {
+  font-weight: 600;
+  font-size: $text-base;
+  color: var(--foreground);
+}
+
+.count {
+  font-size: $text-xs;
+  color: var(--muted-foreground);
+}
+
+.blockActions,
+.itemActions {
+  display: flex;
+  gap: $space-1;
+}
+
+.items {
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid var(--border);
+  transition: background $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--muted);
+  }
+}
+
+.itemName {
+  color: var(--foreground);
+  font-size: $text-sm;
+}
+
+.itemActions {
+  opacity: 0.5;
+  transition: opacity $duration-fast $ease-out;
+
+  .item:hover & {
+    opacity: 1;
+  }
+}
+
+.noItems {
+  padding: $space-4;
+  color: var(--muted-foreground);
+  font-size: $text-sm;
+  font-style: italic;
+}
+
+.addItem {
+  width: 100%;
+  padding: $space-3 $space-4;
+  text-align: left;
+  font-size: $text-sm;
+  font-weight: 500;
+  color: var(--accent);
+  transition: background $duration-fast $ease-out;
+
+  &:hover {
+    background: rgba($color-accent, 0.04);
+  }
+}
+
+.empty {
+  padding: $space-6 0;
+  color: var(--muted-foreground);
+  font-size: $text-sm;
+}
+
+// --- Modal form -------------------------------------------------------------
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+  margin-top: $space-2;
+}

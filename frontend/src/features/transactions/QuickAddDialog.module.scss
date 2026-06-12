@@ -1,0 +1,34 @@
+@use "../../styles/abstracts/index" as *;
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-4;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $space-3;
+  margin-top: $space-2;
+}
+
+.saved {
+  margin-right: auto;
+  font-size: $text-sm;
+  font-weight: 500;
+  color: var(--positive);
+}
+
+.hint {
+  grid-column: 1 / -1;
+  font-size: $text-xs;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}

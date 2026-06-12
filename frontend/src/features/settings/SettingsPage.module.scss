@@ -1,0 +1,16 @@
+@use "../../styles/abstracts/index" as *;
+
+// Payment + Income sit side by side as compact sections (no tabs).
+.sources {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-5;
+
+  @include md {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.categories {
+  margin-top: $space-5;
+}

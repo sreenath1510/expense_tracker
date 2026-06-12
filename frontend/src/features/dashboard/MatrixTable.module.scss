@@ -1,0 +1,288 @@
+@use "../../styles/abstracts/index" as *;
+
+// The matrix is the heart of the app. It mirrors the Excel pivot but with
+// the design system's polish: a sticky category column, generous row rhythm,
+// the signature accent on totals, and an emphasized summary block.
+
+.scroller {
+  @include card-surface;
+  @include thin-scrollbar;
+  overflow-x: auto;
+  padding: 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $text-sm;
+  font-variant-numeric: tabular-nums; // aligned digits, essential for finance
+}
+
+// --- Sticky first column ----------------------------------------------------
+.stickyCol {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--card);
+  min-width: 13rem;
+  max-width: 13rem;
+}
+
+// --- Header row -------------------------------------------------------------
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--card);
+  border-bottom: 2px solid var(--border);
+  padding: $space-3 $space-4;
+}
+
+.cornerCell {
+  z-index: 4 !important; // above both sticky axes
+  text-align: left;
+}
+
+.cornerText {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted-foreground);
+}
+
+.monthHead {
+  position: relative;
+  text-align: right;
+  min-width: 7rem;
+  cursor: pointer;
+  transition: background $duration-fast $ease-out;
+
+  &:hover {
+    background: rgba($color-accent, 0.05);
+
+    .monthLabel {
+      color: var(--accent);
+    }
+    .monthOpen {
+      opacity: 1;
+      transform: translate(0, -50%);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+}
+
+.monthLabel {
+  display: block;
+  font-family: var(--font-display);
+  font-size: $text-lg;
+  color: var(--foreground);
+  line-height: 1.1;
+  transition: color $duration-fast $ease-out;
+}
+
+// Affordance that the month column drills into a detail view. Hidden until
+// hover/focus so the header stays clean at rest.
+.monthOpen {
+  position: absolute;
+  top: 50%;
+  right: $space-2;
+  display: grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  color: var(--accent);
+  opacity: 0;
+  transform: translate(-4px, -50%);
+  transition: opacity $duration-fast $ease-out, transform $duration-fast $ease-out;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.monthYear {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+}
+
+// --- Block group ------------------------------------------------------------
+.blockGroup {
+  // border-top creates the visual separation between blocks
+  &:not(:first-of-type) .blockRow td {
+    border-top: 1px solid var(--border);
+  }
+}
+
+.blockRow td {
+  padding-top: $space-3;
+}
+
+.blockLabel {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4 $space-1;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: $text-sm;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
+.blockTag {
+  width: 0.4rem;
+  height: 1.1rem;
+  border-radius: $radius-full;
+  flex-shrink: 0;
+}
+
+.expenseTag {
+  background: $gradient-accent;
+}
+
+.investTag {
+  background: var(--investment);
+}
+
+.blockSpacerCell {
+  padding: $space-3 $space-4 $space-1;
+}
+
+// --- Line item rows ---------------------------------------------------------
+.itemRow {
+  transition: background $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--muted);
+
+    .stickyCol {
+      background: var(--muted);
+    }
+  }
+}
+
+.itemLabel {
+  padding: $space-1 $space-4 $space-1 $space-8; // indented under the block
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.amountCell {
+  padding: $space-1 $space-4;
+  text-align: right;
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.emptyCell {
+  color: var(--border);
+}
+
+// --- Summary block (emphasized, inverted-ish) -------------------------------
+.summaryGroup {
+  td {
+    background: var(--surface-inverse);
+    color: rgba(255, 255, 255, 0.92);
+  }
+  .stickyCol {
+    background: var(--surface-inverse);
+  }
+}
+
+.summaryHeaderRow td {
+  padding-top: $space-3;
+}
+
+.summaryHeader {
+  padding: $space-3 $space-4 $space-2;
+  font-family: var(--font-display);
+  font-size: $text-lg;
+  color: #fff !important;
+}
+
+.summaryHeaderSpacer {
+  padding: $space-3 $space-4 $space-2;
+}
+
+.summaryRow td {
+  padding: $space-1 $space-4;
+}
+
+.summaryLabel {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-weight: 500;
+  padding-left: $space-4;
+}
+
+.summaryStrong {
+  .summaryLabel {
+    color: #fff !important;
+    font-weight: 600;
+  }
+}
+
+.summaryCell {
+  text-align: right;
+  font-weight: 600;
+  color: #fff;
+}
+
+.toneIncome {
+  color: #7fd1a6;
+}
+.tonePositive {
+  color: #7fd1a6;
+}
+.toneNegative {
+  color: #ff8a8d;
+}
+.toneInvest {
+  color: #b8a6ff;
+}
+
+// last summary row gets a bottom breather
+.summaryGroup tr:last-child td {
+  padding-bottom: $space-3;
+}
+
+// --- Remarks block ----------------------------------------------------------
+.remarksGroup td {
+  border-top: $space-2 solid var(--background); // gap from summary
+  vertical-align: top;
+}
+
+.remarksLabel {
+  padding: $space-4;
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+}
+
+.remarksCell {
+  padding: $space-4;
+  vertical-align: top;
+}
+
+.remarksText {
+  font-family: var(--font-body);
+  font-size: $text-xs;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.remarksEmpty {
+  color: var(--border);
+}

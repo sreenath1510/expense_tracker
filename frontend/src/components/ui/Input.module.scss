@@ -1,0 +1,48 @@
+@use "../../styles/abstracts/index" as *;
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.label {
+  font-size: $text-sm;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.input {
+  height: 3rem; // h-12
+  padding: 0 $space-4;
+  border-radius: $radius-lg;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  font-size: $text-sm;
+  transition: border-color $duration-fast $ease-out,
+    box-shadow $duration-fast $ease-out;
+  width: 100%;
+
+  &::placeholder {
+    color: rgba($color-muted-foreground, 0.5);
+  }
+
+  &:hover {
+    border-color: rgba($color-accent, 0.3);
+  }
+
+  @include focus-ring;
+  &:focus-visible {
+    border-color: var(--accent);
+  }
+}
+
+.hasError {
+  border-color: var(--negative);
+}
+
+.error {
+  font-size: $text-xs;
+  color: var(--negative);
+}

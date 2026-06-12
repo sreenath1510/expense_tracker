@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(../. venv/Scripts/python.exe -c \"import jwt; print\\('jwt ok'\\)\")",
+      "Bash(../.venv/Scripts/python.exe -c \"import jwt; print\\('PyJWT ok', jwt.__version__\\)\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(../.venv/Scripts/python.exe -m pip install \"PyJWT==2.9.0\")",
+      "Bash(../.venv/Scripts/python.exe -m scripts.init_db)",
+      "Bash(../.venv/Scripts/python.exe -c \"from app.main import app; print\\('app import ok'\\)\")",
+      "Bash(../.venv/Scripts/python.exe -m pip list)",
+      "Bash(.venv/Scripts/python.exe -m pip install \"PyJWT==2.9.0\")",
+      "Bash(.venv/Scripts/python.exe -m scripts.init_db)",
+      "Bash(.venv/Scripts/python.exe -c \"from app.database import SessionLocal; from app.models import User; from sqlalchemy import select; db=SessionLocal\\(\\); u=db.scalar\\(select\\(User\\)\\); print\\('user:', u.username if u else None, '| hash prefix:', u.password_hash[:16] if u else None\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"from app.main import app; print\\('app import ok'\\)\")",
+      "Bash(.venv/Scripts/python.exe -c ' *)",
+      "Bash(.venv/Scripts/python.exe -m uvicorn app.main:app --port 8000 --log-level warning)",
+      "Bash(echo \"exit $?\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(sed -i \"s#/c/Users/Shreenath/Desktop/Project/frontend/public#C:/Users/Shreenath/Desktop/Project/frontend/public#\" /tmp/genpdf.cjs)",
+      "Bash(node /tmp/genpdf.cjs)",
+      "Bash(curl -s -o /dev/null -w \"backend /healthz -> %{http_code}\\\\n\" http://localhost:8000/healthz)",
+      "Bash(curl -s -o /dev/null -w \"frontend :5173 -> %{http_code}\\\\n\" http://localhost:5173)",
+      "Bash(.venv/Scripts/python.exe -m uvicorn app.main:app --port 8000 --log-level info)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/healthz)",
+      "Bash(.venv/Scripts/python.exe -c \"from app.database import Base, engine; import app.models; Base.metadata.create_all\\(bind=engine\\); print\\('tables ensured \\(budgets created\\)'\\)\")",
+      "Bash(.venv/Scripts/python.exe -m alembic stamp head)"
+    ]
+  }
+}

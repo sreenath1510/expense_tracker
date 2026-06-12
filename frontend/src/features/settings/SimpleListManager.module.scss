@@ -1,0 +1,89 @@
+@use "../../styles/abstracts/index" as *;
+
+.head {
+  margin-bottom: $space-5;
+}
+
+.title {
+  font-size: $text-xl;
+  color: var(--foreground);
+}
+
+.desc {
+  margin-top: $space-1;
+  color: var(--muted-foreground);
+  font-size: $text-sm;
+}
+
+.note {
+  padding: $space-3 $space-4;
+  margin-bottom: $space-4;
+  background: rgba($color-accent, 0.04);
+  border: 1px solid rgba($color-accent, 0.15);
+  border-radius: $radius-md;
+  color: var(--muted-foreground);
+  font-size: $text-sm;
+}
+
+.addRow {
+  display: flex;
+  gap: $space-3;
+  margin-bottom: $space-5;
+
+  > :first-child {
+    flex: 1;
+  }
+}
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-3 $space-1;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.name {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.actions {
+  display: flex;
+  gap: $space-1;
+  opacity: 0.6;
+  transition: opacity $duration-fast $ease-out;
+
+  .item:hover & {
+    opacity: 1;
+  }
+}
+
+.editRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  width: 100%;
+
+  > :first-child {
+    flex: 1;
+  }
+}
+
+.empty {
+  padding: $space-6 0;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: $text-sm;
+}

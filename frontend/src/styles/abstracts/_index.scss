@@ -1,0 +1,5 @@
+// Barrel for abstracts. Forwarded so a single `@use "abstracts/index" as *`
+// (auto-injected via vite.config additionalData) exposes tokens + mixins
+// in every SCSS module.
+@forward 'tokens';
+@forward 'mixins';

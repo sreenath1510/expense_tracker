@@ -1,0 +1,48 @@
+@use "../../styles/abstracts/index" as *;
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  margin-bottom: $space-5;
+  padding-bottom: $space-3;
+  border-bottom: 1px solid var(--border);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
+
+.title {
+  font-size: $text-2xl;
+  line-height: 1.15;
+
+  @include md {
+    font-size: $text-3xl;
+  }
+}
+
+.description {
+  color: var(--muted-foreground);
+  font-size: $text-sm;
+  max-width: 46rem;
+  margin-top: 0.15rem;
+}
+
+.actions {
+  display: flex;
+  gap: $space-2;
+  flex-wrap: wrap;
+}

@@ -1,0 +1,337 @@
+@use "../../styles/abstracts/index" as *;
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $space-3;
+  margin-bottom: $space-5;
+
+  @include md {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  padding: $space-4;
+}
+
+.statLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+}
+
+.statAdd {
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: $radius-full;
+  background: rgba($color-accent, 0.1);
+  color: var(--accent);
+  font-size: $text-base;
+  line-height: 1;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+}
+
+.statValue {
+  font-size: $text-2xl;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+
+  &.income { color: var(--positive); }
+  &.balance { color: var(--accent); }
+  &.invest { color: var(--investment); }
+}
+
+// One row: search · source filter · sort · count/source · total. The trailing
+// right padding lines the total up with each accordion's subtotal.
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-3;
+  padding-right: 3.5rem;
+  margin-bottom: $space-4;
+}
+
+.search {
+  flex: 0 1 18rem;
+  min-width: 12rem;
+}
+
+.summaryMeta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  letter-spacing: 0.03em;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.summaryAmount {
+  font-family: var(--font-mono);
+  font-size: $text-sm;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+// --- Accordion group cards --------------------------------------------------
+.groupWrap {
+  margin-bottom: $space-3;
+  transition: opacity $duration-fast $ease-out;
+}
+
+.dragging {
+  opacity: 0.45;
+}
+
+.groupCard {
+  overflow: hidden;
+}
+
+// The income group isn't inside a .groupWrap (which carries the gap), so it
+// needs its own spacing before the expense blocks below it.
+.incomeCard {
+  margin-bottom: $space-3;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: var(--card);
+}
+
+// The clickable expand/collapse region (everything except the actions).
+.groupToggle {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex: 1;
+  min-width: 0;
+  padding: $space-3 $space-4;
+  text-align: left;
+  font-weight: 600;
+  font-size: $text-sm;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: background $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--muted);
+  }
+}
+
+.incomeHeader {
+  background: rgba($color-positive, 0.05);
+
+  .groupToggle:hover {
+    background: rgba($color-positive, 0.09);
+  }
+}
+
+.groupHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding-right: $space-3;
+}
+
+// Budget target chip (also the edit trigger).
+.budgetChip {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  padding: $space-1 $space-2;
+  border-radius: $radius-full;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    color: var(--accent);
+    box-shadow: inset 0 0 0 1px rgba($color-accent, 0.3);
+  }
+
+  // tone by spend ratio
+  &.under { color: var(--positive); }
+  &.near { color: #b45309; }
+  &.over { color: var(--negative); }
+}
+
+// Thin spend-vs-budget progress bar under the header.
+.budgetTrack {
+  height: 3px;
+  background: var(--muted);
+}
+
+.budgetFill {
+  height: 100%;
+  transition: width $duration-base $ease-out;
+
+  &.under { background: var(--positive); }
+  &.near { background: #f5a623; }
+  &.over { background: var(--negative); }
+}
+
+// --- Budget vs Actual chart -------------------------------------------------
+.budgetChartCard {
+  margin-bottom: $space-5;
+}
+
+.budgetChartTitle {
+  font-size: $text-base;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: $space-4;
+}
+
+.grip {
+  color: var(--border);
+  cursor: grab;
+  font-size: $text-sm;
+  line-height: 1;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.caret {
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted-foreground);
+  transition: transform $duration-fast $ease-out;
+}
+
+.caretOpen {
+  transform: rotate(90deg);
+}
+
+.dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: $radius-full;
+  flex-shrink: 0;
+
+  &.expense { background: var(--accent); }
+  &.invest { background: var(--investment); }
+  &.incomeDot { background: var(--positive); }
+}
+
+.countPill {
+  padding: 0.05rem $space-2;
+  border-radius: $radius-full;
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--muted-foreground);
+}
+
+.groupSubtotal {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: $text-sm;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.incomePos {
+  color: var(--positive);
+}
+
+// --- Transaction table ------------------------------------------------------
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid var(--border);
+
+  tbody td {
+    padding: $space-2 $space-4;
+    font-size: $text-sm;
+    border-bottom: 1px solid var(--border);
+    color: var(--foreground);
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr {
+    transition: background $duration-fast $ease-out;
+
+    &:hover {
+      background: rgba($color-accent, 0.03);
+    }
+  }
+}
+
+.right { text-align: right; }
+
+.date {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.category {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.source {
+  display: inline-block;
+  padding: 0.1rem $space-2;
+  border-radius: $radius-full;
+  background: var(--muted);
+  font-size: $text-xs;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.note {
+  color: var(--muted-foreground);
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amount {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rowActions {
+  display: flex;
+  gap: $space-1;
+  justify-content: flex-end;
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted-foreground);
+  padding: $space-8;
+}

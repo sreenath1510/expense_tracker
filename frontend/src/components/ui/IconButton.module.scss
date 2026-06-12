@@ -1,0 +1,36 @@
+@use "../../styles/abstracts/index" as *;
+
+.btn {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: $radius-md;
+  color: var(--muted-foreground);
+  transition: all $duration-fast $ease-out;
+  flex-shrink: 0;
+
+  svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  &:hover {
+    transform: scale(1.12);
+  }
+  &:active {
+    transform: scale(0.92);
+  }
+
+  @include focus-ring;
+}
+
+.default:hover {
+  background: var(--muted);
+  color: var(--accent);
+}
+
+.danger:hover {
+  background: rgba($color-negative, 0.08);
+  color: var(--negative);
+}

@@ -1,0 +1,28 @@
+@use "../../styles/abstracts/index" as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-4;
+  min-height: 16rem;
+  justify-content: center;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  border: 1px solid rgba($color-accent, 0.3);
+  background: rgba($color-accent, 0.05);
+  border-radius: $radius-full;
+  padding: $space-2 $space-4;
+}
+
+.text {
+  color: var(--muted-foreground);
+  font-size: $text-lg;
+  max-width: 36rem;
+}

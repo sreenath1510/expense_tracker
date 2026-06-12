@@ -1,0 +1,14 @@
+@use "../../styles/abstracts/index" as *;
+
+.message {
+  color: var(--muted-foreground);
+  font-size: $text-sm;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+  margin-top: $space-5;
+}

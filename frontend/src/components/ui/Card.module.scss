@@ -1,0 +1,48 @@
+@use "../../styles/abstracts/index" as *;
+
+.card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: $radius-xl; // rounded-2xl
+  box-shadow: $shadow-md;
+  transition: box-shadow $duration-base $ease-out,
+    transform $duration-base $ease-out;
+}
+
+.padded {
+  padding: $space-6;
+
+  @include md {
+    padding: $space-8;
+  }
+}
+
+.interactive {
+  cursor: default;
+
+  // Gradient overlay fades in on hover (theme.md)
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba($color-accent, 0.03),
+      transparent
+    );
+    opacity: 0;
+    transition: opacity $duration-base $ease-out;
+    pointer-events: none;
+  }
+
+  &:hover {
+    box-shadow: $shadow-xl;
+    transform: translateY(-2px);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+}

@@ -1,0 +1,274 @@
+@use "../../styles/abstracts/index" as *;
+
+// --- Dropzone ---------------------------------------------------------------
+.dropCard {
+  max-width: 44rem;
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $space-3;
+  padding: $space-16 $space-8;
+  border: 2px dashed var(--border);
+  border-radius: $radius-xl;
+  cursor: pointer;
+  text-align: center;
+  transition: all $duration-base $ease-out;
+
+  &:hover {
+    border-color: rgba($color-accent, 0.4);
+    background: rgba($color-accent, 0.02);
+  }
+  @include focus-ring;
+}
+
+.dropIcon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: $radius-xl;
+  background: $gradient-accent;
+  color: #fff;
+  box-shadow: $shadow-accent;
+
+  svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+.dropText {
+  font-size: $text-lg;
+  color: var(--foreground);
+
+  strong {
+    color: var(--accent);
+  }
+}
+
+.dropHint {
+  font-size: $text-sm;
+  color: var(--muted-foreground);
+}
+
+.error {
+  margin-top: $space-4;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  background: rgba($color-negative, 0.08);
+  color: var(--negative);
+  font-size: $text-sm;
+}
+
+.success {
+  margin-top: $space-4;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  background: rgba($color-positive, 0.1);
+  color: var(--positive);
+  font-size: $text-sm;
+  font-weight: 500;
+}
+
+// --- Toolbar ----------------------------------------------------------------
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  flex-wrap: wrap;
+  margin-bottom: $space-5;
+}
+
+.toolbarInfo {
+  display: flex;
+  align-items: baseline;
+  gap: $space-4;
+}
+
+.fileName {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.progress {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  color: var(--accent);
+}
+
+.bulkActions {
+  display: flex;
+  gap: $space-3;
+}
+
+// --- Mapping table ----------------------------------------------------------
+.tableCard {
+  overflow: hidden;
+}
+
+.tableScroll {
+  @include thin-scrollbar;
+  overflow-x: auto;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $text-sm;
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--muted);
+    text-align: left;
+    padding: $space-3 $space-4;
+    font-family: var(--font-mono);
+    font-size: $text-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted-foreground);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: $space-2 $space-4;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tbody tr:hover {
+    background: var(--muted);
+  }
+}
+
+.right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.center {
+  text-align: center;
+}
+
+// --- Column widths: tighten amount, give description the room ---------------
+.colCheck { width: 2.75rem; }
+.colDate { width: 8rem; }
+.colAmount { width: 7rem; }
+.colDesc { width: auto; } // takes all remaining space
+.colCat { width: 12rem; }
+.colSrc { width: 10rem; }
+.colActions { width: 3rem; }
+
+.check {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.selectedRow td {
+  background: rgba($color-accent, 0.06);
+}
+
+.selectedPill {
+  padding: $space-1 $space-3;
+  border-radius: $radius-full;
+  background: rgba($color-accent, 0.1);
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.dateCell {
+  white-space: nowrap;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+// Inline editable cells (date + amount). Borderless until focused so the
+// table reads cleanly, but clearly editable on interaction.
+.cellInput {
+  width: 100%;
+  padding: $space-1 $space-2;
+  border: 1px solid transparent;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--foreground);
+  font-size: $text-sm;
+  font-variant-numeric: tabular-nums;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    border-color: var(--border);
+  }
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--card);
+    box-shadow: 0 0 0 3px rgba($color-accent, 0.12);
+  }
+}
+
+.amountField {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  min-width: 7rem;
+}
+
+.rupee {
+  color: var(--muted-foreground);
+}
+
+.amountInput {
+  text-align: right;
+  font-weight: 600;
+
+  // Hide the number spinners — they crowd the narrow cell.
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.descCell {
+  color: var(--foreground);
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+// A subtle accent rail on fully-mapped rows for quick visual scanning.
+.mappedRow td:first-child {
+  box-shadow: inset 3px 0 0 var(--positive);
+}
+
+// --- Save bar ---------------------------------------------------------------
+.saveBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  flex-wrap: wrap;
+  padding: $space-4 $space-6;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+
+.saveHint {
+  font-size: $text-sm;
+  color: var(--muted-foreground);
+}

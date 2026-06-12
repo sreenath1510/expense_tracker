@@ -1,0 +1,170 @@
+// =============================================================================
+// GLOBAL BASE  —  CSS custom properties, reset, base typography
+// =============================================================================
+@use '../abstracts/index' as *;
+
+
+// --- Expose tokens as CSS custom properties ---------------------------------
+// This bridges SCSS (compile-time) to runtime theming. When you add dark mode
+// later, you only override these custom properties under a [data-theme="dark"]
+// selector — no component rewrites needed.
+:root {
+  --background:        #{$color-background};
+  --foreground:        #{$color-foreground};
+  --muted:             #{$color-muted};
+  --muted-foreground:  #{$color-muted-foreground};
+  --accent:            #{$color-accent};
+  --accent-secondary:  #{$color-accent-secondary};
+  --accent-foreground: #{$color-accent-foreground};
+  --border:            #{$color-border};
+  --card:              #{$color-card};
+  --ring:              #{$color-ring};
+  --positive:          #{$color-positive};
+  --negative:          #{$color-negative};
+  --investment:        #{$color-investment};
+
+  // Semantic surfaces used by "inverted" UI (sidebar, matrix summary band).
+  // Kept dark in both themes; the dark theme just shifts the shade.
+  --surface-inverse:      #{$color-foreground};
+  --surface-inverse-text: #ffffff;
+  --sidebar-bg:           #{$color-foreground};
+
+  --font-display: #{$font-display};
+  --font-body:    #{$font-body};
+  --font-mono:    #{$font-mono};
+}
+
+// --- Dark theme -------------------------------------------------------------
+// Only the runtime custom properties are overridden — every component reads
+// these vars, so no component styles need to change.
+[data-theme='dark'] {
+  --background:        #0b1120; // deep navy canvas
+  --foreground:        #e7ecf3; // light text
+  --muted:             #1a2438; // elevated dark surface
+  --muted-foreground:  #8da2bd;
+  --accent:            #4d7cff; // brighter blue reads better on dark
+  --accent-secondary:  #7aa2ff;
+  --accent-foreground: #ffffff;
+  --border:            #243049;
+  --card:              #121b2e;
+  --ring:              #4d7cff;
+  --positive:          #34d399;
+  --negative:          #f87171;
+  --investment:        #a78bfa;
+
+  --surface-inverse:      #1e293b;
+  --surface-inverse-text: #f8fafc;
+  --sidebar-bg:           #0a1020;
+
+  color-scheme: dark;
+}
+
+// --- Modern reset -----------------------------------------------------------
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  // Scale the whole rem-based design system to ~80% for a denser,
+  // numbers-first finance view. 16px → 13px base; every spacing/size token
+  // (all expressed in rem) shrinks proportionally, keeping the rhythm intact.
+  font-size: 81.25%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: $text-base;
+  line-height: 1.6;
+  color: var(--foreground);
+  background: var(--background);
+  min-height: 100vh;
+  transition: background-color $duration-base $ease-out, color $duration-base $ease-out;
+}
+
+// Smoothly cross-fade surfaces/text/borders when the theme flips. Scoped to
+// color properties so it never interferes with layout or transform motion.
+[data-theme] :where(.card, aside, header, table, td, th, input, select, button, svg) {
+  transition: background-color $duration-base $ease-out,
+    border-color $duration-base $ease-out, color $duration-base $ease-out,
+    fill $duration-base $ease-out;
+}
+
+#root {
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+// --- Headlines use the display font -----------------------------------------
+h1, h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+h3, h4, h5, h6 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+// --- Form elements inherit type ---------------------------------------------
+input, button, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button { cursor: pointer; background: none; border: none; }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+// --- Respect reduced motion (theme.md > Motion) -----------------------------
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// --- Utility: section label badge (theme.md > Section Labels) ---------------
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-3;
+  border-radius: $radius-full;
+  border: 1px solid rgba($color-accent, 0.3);
+  background: rgba($color-accent, 0.05);
+  padding: $space-2 $space-5;
+
+  &__dot {
+    height: 0.5rem;
+    width: 0.5rem;
+    border-radius: $radius-full;
+    background: var(--accent);
+  }
+  &__text {
+    font-family: var(--font-mono);
+    font-size: $text-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+  }
+}
+
+.gradient-text { @include gradient-text; }

@@ -1,0 +1,71 @@
+@use "../../styles/abstracts/index" as *;
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  font-family: var(--font-body);
+  font-weight: 500;
+  white-space: nowrap;
+  border-radius: $radius-lg; // rounded-xl
+  transition: all $duration-fast $ease-out;
+  @include focus-ring;
+
+  &:active { transform: scale(0.98); } // tactile feedback per theme.md
+  &:disabled { opacity: 0.5; pointer-events: none; }
+}
+
+// --- Sizes (44px+ touch targets per theme.md accessibility) -----------------
+.sm { height: 2.25rem; padding: 0 $space-3; font-size: $text-sm; }
+.md { height: 3rem;    padding: 0 $space-5; font-size: $text-sm; }   // h-12
+.lg { height: 3.5rem;  padding: 0 $space-6; font-size: $text-base; } // h-14
+
+// --- Primary: signature gradient --------------------------------------------
+.primary {
+  background: $gradient-accent-h;
+  color: var(--accent-foreground);
+  box-shadow: $shadow-sm;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: $shadow-accent-lg;
+    filter: brightness(1.08);
+  }
+}
+
+// --- Secondary / outline ----------------------------------------------------
+.secondary {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+
+  &:hover:not(:disabled) {
+    border-color: rgba($color-accent, 0.3);
+    background: var(--muted);
+    box-shadow: $shadow-sm;
+  }
+}
+
+// --- Ghost ------------------------------------------------------------------
+.ghost {
+  background: transparent;
+  color: var(--muted-foreground);
+
+  &:hover:not(:disabled) {
+    color: var(--foreground);
+    background: var(--muted);
+  }
+}
+
+// --- Danger -----------------------------------------------------------------
+.danger {
+  background: transparent;
+  color: var(--negative);
+  border: 1px solid rgba($color-negative, 0.3);
+
+  &:hover:not(:disabled) {
+    background: rgba($color-negative, 0.08);
+    border-color: rgba($color-negative, 0.5);
+  }
+}

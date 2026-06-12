@@ -1,0 +1,43 @@
+@use "../../styles/abstracts/index" as *;
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.content {
+  flex: 1;
+  min-width: 0; // allows the wide matrix to scroll instead of blowing out layout
+  position: relative;
+  padding: $space-8 $space-6;
+  overflow-x: hidden;
+
+  // Ambient radial glow in the corner (theme.md > Textures: radial glows)
+  &::before {
+    content: '';
+    position: fixed;
+    top: -10%;
+    right: -5%;
+    width: 40rem;
+    height: 40rem;
+    background: radial-gradient(
+      circle,
+      rgba($color-accent, 0.06),
+      transparent 70%
+    );
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @include md {
+    padding: $space-12 $space-10;
+  }
+
+  // Keep real content above the glow
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}

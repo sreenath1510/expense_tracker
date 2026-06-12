@@ -1,0 +1,160 @@
+@use "../../styles/abstracts/index" as *;
+
+// --- Year cards -------------------------------------------------------------
+.yearGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: $space-4;
+  margin-bottom: $space-6;
+}
+
+.yearCard {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-5;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: $radius-xl;
+  box-shadow: $shadow-sm;
+  cursor: pointer;
+  transition: transform $duration-fast $ease-out, box-shadow $duration-fast $ease-out,
+    border-color $duration-fast $ease-out;
+
+  // Gradient accent strip that slides in on hover.
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: $gradient-accent-h;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform $duration-base $ease-out;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: $shadow-lg;
+    border-color: rgba($color-accent, 0.3);
+
+    &::before {
+      transform: scaleX(1);
+    }
+    .open {
+      color: var(--accent);
+    }
+  }
+}
+
+.yearTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.year {
+  font-family: var(--font-display);
+  font-size: $text-3xl;
+  color: var(--foreground);
+}
+
+.rate {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  font-weight: 600;
+  padding: $space-1 $space-2;
+  border-radius: $radius-full;
+}
+
+.ratePos {
+  background: rgba($color-positive, 0.12);
+  color: var(--positive);
+}
+
+.rateNeg {
+  background: rgba($color-negative, 0.12);
+  color: var(--negative);
+}
+
+.yearStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-3;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.statLabel {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+}
+
+.statValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+
+  &.pos { color: var(--positive); }
+  &.neg { color: var(--negative); }
+  &.accent { color: var(--accent); }
+  &.invest { color: var(--investment); }
+}
+
+.open {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+  transition: color $duration-fast $ease-out;
+}
+
+// --- Chart card -------------------------------------------------------------
+.chartCard {
+  margin-bottom: $space-5;
+}
+
+.chartTitle {
+  font-size: $text-base;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: $space-4;
+}
+
+// --- Loading / error states -------------------------------------------------
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $space-4;
+  min-height: 60vh;
+  color: var(--muted-foreground);
+}
+
+.spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: $radius-full;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

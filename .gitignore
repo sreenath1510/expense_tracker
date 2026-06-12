@@ -1,0 +1,31 @@
+# Python
+.venv/
+backend/.venv/
+**/__pycache__/
+*.pyc
+
+# Local SQLite data + backups (never commit real data)
+*.db
+backend/finance.db
+backend/finance.db.bak-*
+backend/_baseline.db
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+
+# Env / secrets
+.env
+backend/.env
+frontend/.env*
+!**/.env.example
+
+# Vercel
+.vercel/
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
