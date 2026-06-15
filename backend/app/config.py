@@ -7,6 +7,7 @@ SQLite locally; flip DATABASE_URL to a Postgres URL on Railway/Fly/Render
 in production and nothing else needs to change.
 """
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +16,17 @@ class Settings(BaseSettings):
 
     # Database: SQLite for local dev, Postgres for prod (same SQLAlchemy code).
     database_url: str = "sqlite:///./finance.db"
+
+    @field_validator("database_url")
+    @classmethod
+    def _use_psycopg3(cls, v: str) -> str:
+        """Normalize bare Postgres URLs (as Neon/Heroku hand them out) to the
+        psycopg v3 driver, so we never fall back to the missing psycopg2."""
+        if v.startswith("postgres://"):
+            return "postgresql+psycopg://" + v[len("postgres://") :]
+        if v.startswith("postgresql://"):
+            return "postgresql+psycopg://" + v[len("postgresql://") :]
+        return v
 
     # CORS: comma-separated list. Vite dev server runs on 5173.
     cors_origins: str = "http://localhost:5173"
