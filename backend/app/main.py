@@ -43,7 +43,10 @@ app.add_middleware(
 
 
 @app.get("/healthz", tags=["meta"])
+@app.get("/api/healthz", tags=["meta"])
 def healthz() -> dict[str, str]:
+    # /api/healthz is the one reachable on Vercel (only /api/* hits the function);
+    # it does no DB work, so it isolates "function is up" from "DB is configured".
     return {"status": "ok"}
 
 
