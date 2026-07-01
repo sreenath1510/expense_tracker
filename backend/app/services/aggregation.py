@@ -16,7 +16,7 @@ The summary engine uses the Block.type flag to decide what counts where:
 from collections import defaultdict
 from datetime import date
 
-from sqlalchemy import func, select
+from sqlalchemy import extract, func, select
 from sqlalchemy.orm import Session
 
 from app.models import (
@@ -39,6 +39,22 @@ def _month_key(d: date) -> str:
     return f"{d.year:04d}-{d.month:02d}"
 
 
+def _ym(year, month) -> str:
+    """(year, month) numbers → 'YYYY-MM'. extract() returns floats on some
+    backends, so coerce to int first."""
+    return f"{int(year):04d}-{int(month):02d}"
+
+
+# extract() is portable: SQLAlchemy compiles it to strftime() on SQLite and
+# EXTRACT() on Postgres, so month grouping works on both.
+def _year(col):
+    return extract("year", col)
+
+
+def _month(col):
+    return extract("month", col)
+
+
 def _last_n_months(n: int) -> list[str]:
     """Default set of months when there's no data yet."""
     today = date.today()
@@ -57,16 +73,22 @@ def build_matrix(db: Session, user_id: int) -> MatrixResponse:
     # --- 1. Determine the month columns ------------------------------------
     # Take every month that appears in any of this user's data sources. Fall
     # back to the last four months when there's no data yet.
-    txn_months = db.scalars(
-        select(func.strftime("%Y-%m", Transaction.txn_date))
-        .where(Transaction.user_id == user_id)
-        .distinct()
-    ).all()
-    income_months = db.scalars(
-        select(func.strftime("%Y-%m", IncomeEntry.entry_date))
-        .where(IncomeEntry.user_id == user_id)
-        .distinct()
-    ).all()
+    txn_months = [
+        _ym(y, m)
+        for y, m in db.execute(
+            select(_year(Transaction.txn_date), _month(Transaction.txn_date))
+            .where(Transaction.user_id == user_id)
+            .distinct()
+        ).all()
+    ]
+    income_months = [
+        _ym(y, m)
+        for y, m in db.execute(
+            select(_year(IncomeEntry.entry_date), _month(IncomeEntry.entry_date))
+            .where(IncomeEntry.user_id == user_id)
+            .distinct()
+        ).all()
+    ]
     remark_months = db.execute(
         select(MonthlyRemark.year, MonthlyRemark.month).where(
             MonthlyRemark.user_id == user_id
@@ -84,17 +106,22 @@ def build_matrix(db: Session, user_id: int) -> MatrixResponse:
     txn_rows = db.execute(
         select(
             Transaction.line_item_id,
-            func.strftime("%Y-%m", Transaction.txn_date),
+            _year(Transaction.txn_date),
+            _month(Transaction.txn_date),
             func.sum(Transaction.amount),
         )
         .where(Transaction.user_id == user_id)
-        .group_by(Transaction.line_item_id, func.strftime("%Y-%m", Transaction.txn_date))
+        .group_by(
+            Transaction.line_item_id,
+            _year(Transaction.txn_date),
+            _month(Transaction.txn_date),
+        )
     ).all()
 
     txn_totals: dict[int, dict[str, float]] = defaultdict(lambda: defaultdict(float))
-    for line_item_id, month, total in txn_rows:
+    for line_item_id, year, month, total in txn_rows:
         if total is not None:
-            txn_totals[line_item_id][month] = float(total)
+            txn_totals[line_item_id][_ym(year, month)] = float(total)
 
     # --- 3. Build block groups with their line items and subtotals --------
     blocks = list(
@@ -144,16 +171,18 @@ def build_matrix(db: Session, user_id: int) -> MatrixResponse:
     # --- 4. Income totals per month ---------------------------------------
     income_rows = db.execute(
         select(
-            func.strftime("%Y-%m", IncomeEntry.entry_date),
+            _year(IncomeEntry.entry_date),
+            _month(IncomeEntry.entry_date),
             func.sum(IncomeEntry.amount),
         )
         .where(IncomeEntry.user_id == user_id)
-        .group_by(func.strftime("%Y-%m", IncomeEntry.entry_date))
+        .group_by(_year(IncomeEntry.entry_date), _month(IncomeEntry.entry_date))
     ).all()
     income_totals: dict[str, float] = {m: 0.0 for m in months}
-    for month, total in income_rows:
-        if month in income_totals and total is not None:
-            income_totals[month] = float(total)
+    for year, month, total in income_rows:
+        key = _ym(year, month)
+        if key in income_totals and total is not None:
+            income_totals[key] = float(total)
 
     # --- 5. Summary engine -------------------------------------------------
     # Investments are carved out of income alongside expenses, so:

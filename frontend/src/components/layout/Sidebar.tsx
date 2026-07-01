@@ -80,7 +80,7 @@ export function Sidebar() {
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         <Logo size={36} className={styles.logo} />
-        {!collapsed && <span className={styles.brandName}>Ledger</span>}
+        {!collapsed && <span className={styles.brandName}>Fathom</span>}
       </button>
 
       <nav className={styles.nav}>

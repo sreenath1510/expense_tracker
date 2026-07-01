@@ -1,7 +1,7 @@
 """Transaction and income-entry routes. Every row is scoped to its owner."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import extract, func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -59,7 +59,11 @@ def list_transactions(
         .where(Transaction.user_id == user.id)
     )
     if month:
-        stmt = stmt.where(func.strftime("%Y-%m", Transaction.txn_date) == month)
+        y, m = (int(p) for p in month.split("-"))
+        stmt = stmt.where(
+            extract("year", Transaction.txn_date) == y,
+            extract("month", Transaction.txn_date) == m,
+        )
     stmt = stmt.order_by(Transaction.txn_date.desc(), Transaction.id.desc())
 
     return [
@@ -189,7 +193,11 @@ def list_income_entries(
         .where(IncomeEntry.user_id == user.id)
     )
     if month:
-        stmt = stmt.where(func.strftime("%Y-%m", IncomeEntry.entry_date) == month)
+        y, m = (int(p) for p in month.split("-"))
+        stmt = stmt.where(
+            extract("year", IncomeEntry.entry_date) == y,
+            extract("month", IncomeEntry.entry_date) == m,
+        )
     stmt = stmt.order_by(IncomeEntry.entry_date.desc(), IncomeEntry.id.desc())
 
     return [

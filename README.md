@@ -1,4 +1,4 @@
-# Ledger — Local-First Personal Finance App
+# Fathom — Personal Finance App
 
 A private, local-first replacement for the Excel pivot you've been
 maintaining. The categories from your sheet are seeded in — Mandatory,

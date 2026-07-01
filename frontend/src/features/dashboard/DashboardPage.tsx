@@ -1,13 +1,14 @@
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useGetMatrixQuery } from '@/api/client';
+import { api, useGetMatrixQuery } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { BarChart } from '@/components/charts/BarChart';
 import { Sparkline } from '@/components/charts/Sparkline';
 import { CountUp } from '@/components/ui/CountUp';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { openQuickAdd } from '@/features/ui/uiSlice';
 import { getYearSummaries } from '@/utils/yearly';
 import { formatAmount } from '@/utils/format';
@@ -16,13 +17,65 @@ import styles from './DashboardPage.module.scss';
 export function DashboardPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const token = useAppSelector((s) => s.auth.token);
   const { data, isLoading, isError } = useGetMatrixQuery();
+
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState<null | 'export' | 'import'>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const handleExport = async () => {
+    setBusy('export');
+    setMsg(null);
+    try {
+      const res = await fetch('/api/export', { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fathom-backup-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setMsg('Backup downloaded.');
+    } catch {
+      setMsg('Export failed — please try again.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleImport = async (file: File) => {
+    setBusy('import');
+    setMsg(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/import', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body?.detail ?? 'import failed');
+      dispatch(api.util.resetApiState()); // refetch everything with the restored data
+      const c = body.imported ?? {};
+      setMsg(`Imported ${c.transactions ?? 0} transactions, ${c.income ?? 0} income, ${c.budgets ?? 0} budgets.`);
+    } catch (e) {
+      setMsg(`Import failed: ${(e as Error).message}`);
+    } finally {
+      setBusy(null);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
 
   if (isLoading) {
     return (
       <div className={styles.state}>
         <div className={styles.spinner} />
-        <p>Loading your ledger…</p>
+        <p>Loading your data…</p>
       </div>
     );
   }
@@ -48,13 +101,30 @@ export function DashboardPage() {
         }
         actions={
           <>
-            <Button variant="secondary">Export</Button>
+            <Button variant="secondary" onClick={() => fileRef.current?.click()} disabled={busy !== null}>
+              {busy === 'import' ? 'Importing…' : 'Import'}
+            </Button>
+            <Button variant="secondary" onClick={handleExport} disabled={busy !== null}>
+              {busy === 'export' ? 'Exporting…' : 'Export'}
+            </Button>
             <Button variant="primary" onClick={() => dispatch(openQuickAdd())}>
               + Quick Add
             </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImport(f);
+              }}
+            />
           </>
         }
       />
+
+      {msg && <p className={styles.backupMsg}>{msg}</p>}
 
       {/* Year cards — click to open the year's detail */}
       <div className={styles.yearGrid}>

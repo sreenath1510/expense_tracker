@@ -23,7 +23,7 @@ export function Logo({ size = 40, className }: LogoProps) {
       fill="none"
       className={className}
       role="img"
-      aria-label="Ledger"
+      aria-label="Fathom"
     >
       <defs>
         <linearGradient id={grad} x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">

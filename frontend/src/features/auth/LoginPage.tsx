@@ -57,14 +57,14 @@ export function LoginPage() {
       >
         <div className={styles.brand}>
           <Logo size={44} className={styles.brandMark} />
-          <span className={styles.brandName}>Ledger</span>
+          <span className={styles.brandName}>Fathom</span>
         </div>
 
         <Card className={styles.card}>
           <h1 className={styles.title}>
             Welcome <span className="gradient-text">back</span>
           </h1>
-          <p className={styles.subtitle}>Sign in to your private ledger.</p>
+          <p className={styles.subtitle}>Sign in to your private Fathom.</p>
 
           <form className={styles.form} onSubmit={handleSubmit}>
             <Input

@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routers import (
     auth,
+    backup,
     blocks,
     budgets,
     income_sources,
@@ -66,5 +67,6 @@ for router in (
     upload.router,
     remarks.router,
     budgets.router,
+    backup.router,
 ):
     app.include_router(router, prefix="/api", dependencies=[Depends(get_current_user)])
