@@ -23,7 +23,25 @@
       "Bash(.venv/Scripts/python.exe -m uvicorn app.main:app --port 8000 --log-level info)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/healthz)",
       "Bash(.venv/Scripts/python.exe -c \"from app.database import Base, engine; import app.models; Base.metadata.create_all\\(bind=engine\\); print\\('tables ensured \\(budgets created\\)'\\)\")",
-      "Bash(.venv/Scripts/python.exe -m alembic stamp head)"
+      "Bash(.venv/Scripts/python.exe -m alembic stamp head)",
+      "Bash(git -c user.name=Sreenath -c user.email=sreenath@local commit -q -m ' *)",
+      "Bash(DATABASE_URL=\"postgresql://u:p@host/db?sslmode=require\" .venv/Scripts/python.exe -c \"from app.config import settings; print\\('normalized ->', settings.database_url\\)\")",
+      "Bash(.venv/Scripts/python.exe -m pip install \"psycopg[binary]==3.2.3\")",
+      "Bash(.venv/Scripts/python.exe -c \"import psycopg; print\\('psycopg', psycopg.__version__, 'installed'\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"from app.main import app; print\\('routes:', [r.path for r in app.routes if getattr\\(r,'path',''\\) in \\('/api/export','/api/import'\\)]\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(python -c \"import uvicorn, fastapi; print\\('ok'\\)\")",
+      "Bash(curl -s http://localhost:8000/healthz)",
+      "Bash(curl -s -X POST http://localhost:8000/api/auth/register -H \"Content-Type: application/json\" -d '{\"username\":\"toasttest\",\"password\":\"toasttest123\"}')",
+      "Bash(curl -s -X POST http://localhost:8000/api/transactions -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2FzdHRlc3QiLCJleHAiOjE3ODQ1MjQxODB9.lqgDS6GzEvmiLHxQ35Jx2kidlpHYvYYYzGE0TPuzHy0' -H 'Content-Type: application/json' -d '{\"txnDate\":\"2026-03-05\",\"amount\":2500,\"lineItemId\":113,\"paymentSourceId\":21,\"description\":\"Cook salary March\"}')",
+      "Bash(npm run *)",
+      "Bash(.venv/Scripts/python.exe -m alembic revision --autogenerate -m \"add archived flag to line items\")",
+      "Bash(.venv/Scripts/python.exe -m alembic upgrade head)",
+      "Bash(echo \"tsc exit: $?\")",
+      "Bash(rm -f 'C:\\\\Users\\\\Shreenath/.archtest_token')",
+      "Bash(.venv/Scripts/python.exe -m scripts.import_legacy_excel --file \"C:/Users/Shreenath/Downloads/Monthly Expenses Copy.xlsx\" --username sreenath)",
+      "Bash(.venv/Scripts/python.exe -m scripts.import_legacy_excel --file \"C:/Users/Shreenath/Downloads/Monthly Expenses Copy.xlsx\" --username sreenath --dry-run)",
+      "Bash(git config *)"
     ]
   }
 }
