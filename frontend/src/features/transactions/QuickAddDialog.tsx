@@ -117,7 +117,9 @@ export function QuickAddDialog() {
             Select a category…
           </option>
           {blocks.map((block) => {
-            const items = lineItems.filter((li) => li.blockId === block.id);
+            const items = lineItems.filter(
+              (li) => li.blockId === block.id && !li.archived
+            );
             if (items.length === 0) return null;
             return (
               <optgroup key={block.id} label={block.name}>

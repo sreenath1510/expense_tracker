@@ -11,6 +11,7 @@ import { api } from '@/api/client';
 import uploadReducer from '@/features/upload/uploadSlice';
 import authReducer from '@/features/auth/authSlice';
 import uiReducer from '@/features/ui/uiSlice';
+import { toastMiddleware } from './toastMiddleware';
 
 export const store = configureStore({
   reducer: {
@@ -19,7 +20,7 @@ export const store = configureStore({
     auth: authReducer,
     ui: uiReducer,
   },
-  middleware: (getDefault) => getDefault().concat(api.middleware),
+  middleware: (getDefault) => getDefault().concat(api.middleware, toastMiddleware),
 });
 
 // Enables refetchOnFocus / refetchOnReconnect behaviors.

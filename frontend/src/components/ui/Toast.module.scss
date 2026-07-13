@@ -1,0 +1,71 @@
+@use "../../styles/abstracts/index" as *;
+
+.host {
+  position: fixed;
+  bottom: $space-6;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000; // above modals' overlay
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+  pointer-events: none; // clicks pass through the empty stack area
+  max-width: min(28rem, calc(100vw - #{$space-8}));
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  width: max-content;
+  max-width: 100%;
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: $shadow-lg;
+  animation: toast-in $duration-base $ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dot {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: $radius-full;
+}
+
+.message {
+  font-size: $text-sm;
+  color: var(--foreground);
+  line-height: 1.45;
+}
+
+.close {
+  flex-shrink: 0;
+  margin-left: $space-1;
+  font-size: $text-lg;
+  line-height: 1;
+  color: var(--muted-foreground);
+  transition: color $duration-fast $ease-out;
+
+  &:hover {
+    color: var(--foreground);
+  }
+}
+
+.error .dot   { background: var(--negative); }
+.success .dot { background: var(--positive); }
+.info .dot    { background: var(--accent); }

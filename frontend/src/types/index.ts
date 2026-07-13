@@ -36,6 +36,8 @@ export interface LineItem {
   blockId: number;
   name: string;
   sortOrder: number;
+  /** Hidden from category dropdowns; history stays visible in the matrix. */
+  archived: boolean;
 }
 
 export interface PaymentSource {

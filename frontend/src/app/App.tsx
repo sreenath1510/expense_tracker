@@ -8,24 +8,30 @@ import { YearDetailPage } from '@/features/dashboard/YearDetailPage';
 import { MonthDetailPage } from '@/features/dashboard/MonthDetailPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { BulkUploadPage } from '@/features/upload/BulkUploadPage';
+import { ToastHost } from '@/components/ui/Toast';
 
 export function App() {
   return (
-    <Routes>
-      {/* Public */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignUpPage />} />
+    <>
+      <Routes>
+        {/* Public */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
 
-      {/* Everything else requires a valid token */}
-      <Route element={<RequireAuth />}>
-        <Route element={<AppLayout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="year/:year" element={<YearDetailPage />} />
-          <Route path="month/:monthKey" element={<MonthDetailPage />} />
-          <Route path="upload" element={<BulkUploadPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+        {/* Everything else requires a valid token */}
+        <Route element={<RequireAuth />}>
+          <Route element={<AppLayout />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="year/:year" element={<YearDetailPage />} />
+            <Route path="month/:monthKey" element={<MonthDetailPage />} />
+            <Route path="upload" element={<BulkUploadPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+
+      {/* Global notification stack — errors from any mutation land here */}
+      <ToastHost />
+    </>
   );
 }

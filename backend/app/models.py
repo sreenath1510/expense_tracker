@@ -14,6 +14,7 @@ table has the constraints and indexes I planned originally:
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -23,6 +24,7 @@ from sqlalchemy import (
     Numeric,
     String,
     UniqueConstraint,
+    false,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -76,6 +78,12 @@ class LineItem(Base):
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Archived items keep their history (transactions still reference them and
+    # the matrix still shows past months) but are hidden from the category
+    # dropdowns so new spend can't be booked against them.
+    archived: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     block: Mapped[Block] = relationship(back_populates="line_items")

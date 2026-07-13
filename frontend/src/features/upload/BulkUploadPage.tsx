@@ -31,6 +31,8 @@ export function BulkUploadPage() {
 
   const { data: blocks = [] } = useGetBlocksQuery();
   const { data: lineItems = [] } = useGetLineItemsQuery();
+  // New spend can't be booked against archived categories.
+  const activeLineItems = lineItems.filter((li) => !li.archived);
   const { data: paymentSources = [] } = useGetPaymentSourcesQuery();
   const [batchSave, { isLoading: saving }] = useBatchCreateTransactionsMutation();
 
@@ -206,7 +208,7 @@ export function BulkUploadPage() {
                   Set all categories…
                 </option>
                 {blocks.map((block) => {
-                  const items = lineItems.filter((li) => li.blockId === block.id);
+                  const items = activeLineItems.filter((li) => li.blockId === block.id);
                   if (!items.length) return null;
                   return (
                     <optgroup key={block.id} label={block.name}>
@@ -333,7 +335,9 @@ export function BulkUploadPage() {
                           >
                             <option value="">—</option>
                             {blocks.map((block) => {
-                              const items = lineItems.filter((li) => li.blockId === block.id);
+                              const items = activeLineItems.filter(
+                                (li) => li.blockId === block.id,
+                              );
                               if (!items.length) return null;
                               return (
                                 <optgroup key={block.id} label={block.name}>

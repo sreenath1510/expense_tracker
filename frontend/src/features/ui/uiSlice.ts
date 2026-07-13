@@ -15,6 +15,16 @@ const THEME_KEY = 'ledger.theme';
 
 type Theme = 'light' | 'dark';
 
+export type ToastTone = 'success' | 'error' | 'info';
+
+export interface Toast {
+  id: number;
+  message: string;
+  tone: ToastTone;
+}
+
+let nextToastId = 1;
+
 function loadBlockOrder(): number[] {
   try {
     const raw = localStorage.getItem(BLOCK_ORDER_KEY);
@@ -44,6 +54,8 @@ interface UiState {
   quickAddMonth: string | null;
   /** Persisted display order of block ids on the month screen (drag-reorder). */
   blockOrder: number[];
+  /** Transient notification stack rendered by <ToastHost/>. Never persisted. */
+  toasts: Toast[];
 }
 
 const initialState: UiState = {
@@ -52,6 +64,7 @@ const initialState: UiState = {
   quickAddOpen: false,
   quickAddMonth: null,
   blockOrder: loadBlockOrder(),
+  toasts: [],
 };
 
 const uiSlice = createSlice({
@@ -86,6 +99,23 @@ const uiSlice = createSlice({
       state.theme = action.payload;
       applyTheme(action.payload);
     },
+    pushToast: {
+      reducer(state, action: PayloadAction<Toast>) {
+        state.toasts.push(action.payload);
+      },
+      prepare(payload: { message: string; tone?: ToastTone }) {
+        return {
+          payload: {
+            id: nextToastId++,
+            message: payload.message,
+            tone: payload.tone ?? 'info',
+          },
+        };
+      },
+    },
+    dismissToast(state, action: PayloadAction<number>) {
+      state.toasts = state.toasts.filter((t) => t.id !== action.payload);
+    },
   },
 });
 
@@ -97,5 +127,7 @@ export const {
   setBlockOrder,
   toggleTheme,
   setTheme,
+  pushToast,
+  dismissToast,
 } = uiSlice.actions;
 export default uiSlice.reducer;

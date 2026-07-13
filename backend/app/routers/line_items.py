@@ -86,7 +86,8 @@ def delete_line_item(
     if bound is not None:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "This line item has transactions attached. Reassign or delete them first.",
+            "This line item has transactions attached. Archive it instead to keep "
+            "history, or reassign/delete its transactions first.",
         )
     db.delete(item)
     try:

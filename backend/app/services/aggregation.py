@@ -146,6 +146,10 @@ def build_matrix(db: Session, user_id: int) -> MatrixResponse:
 
         for li in line_items:
             cells = {m: txn_totals[li.id].get(m, 0.0) for m in months}
+            # Archived items appear only where they have history; without data
+            # they'd just be clutter (that's the whole point of archiving).
+            if li.archived and not any(cells.values()):
+                continue
             rows.append(
                 MatrixLineItemRow(
                     line_item_id=li.id, line_item_name=li.name, cells=cells

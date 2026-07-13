@@ -82,6 +82,7 @@ class LineItemUpdate(CamelModel):
     block_id: int | None = None
     name: str | None = Field(default=None, min_length=1, max_length=100)
     sort_order: int | None = None
+    archived: bool | None = None
 
 
 class LineItemOut(CamelModel):
@@ -89,6 +90,7 @@ class LineItemOut(CamelModel):
     block_id: int
     name: str
     sort_order: int
+    archived: bool
 
 
 # --- Payment Sources --------------------------------------------------------

@@ -45,3 +45,18 @@ export const DeleteIcon = () => (
     <path d="M10 11v6M14 11v6" strokeLinecap="round" />
   </svg>
 );
+
+export const ArchiveIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="4" width="18" height="4" rx="1" />
+    <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" strokeLinecap="round" />
+    <path d="M10 12h4" strokeLinecap="round" />
+  </svg>
+);
+
+export const RestoreIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 12a9 9 0 1 0 3-6.7" strokeLinecap="round" />
+    <path d="M3 4v5h5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);

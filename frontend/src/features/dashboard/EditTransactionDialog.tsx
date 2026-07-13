@@ -90,13 +90,20 @@ export function EditTransactionDialog({ transaction, onClose }: Props) {
             Select a category…
           </option>
           {blocks.map((block) => {
-            const items = lineItems.filter((li) => li.blockId === block.id);
+            // Hide archived items, but keep the transaction's current category
+            // selectable even if it has since been archived.
+            const items = lineItems.filter(
+              (li) =>
+                li.blockId === block.id &&
+                (!li.archived || li.id === Number(lineItemId))
+            );
             if (items.length === 0) return null;
             return (
               <optgroup key={block.id} label={block.name}>
                 {items.map((li) => (
                   <option key={li.id} value={li.id}>
                     {li.name}
+                    {li.archived ? ' (archived)' : ''}
                   </option>
                 ))}
               </optgroup>

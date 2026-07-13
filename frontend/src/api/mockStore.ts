@@ -109,6 +109,7 @@ export function handleMockRequest({ url, method, body }: MockRequest): unknown {
       blockId: li.blockId!,
       name: li.name ?? 'Untitled',
       sortOrder: li.sortOrder ?? db.lineItems.length,
+      archived: false,
     };
     db.lineItems.push(created);
     return created;

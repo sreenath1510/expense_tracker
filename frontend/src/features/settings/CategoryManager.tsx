@@ -5,7 +5,13 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { IconButton, EditIcon, DeleteIcon } from '@/components/ui/IconButton';
+import {
+  IconButton,
+  EditIcon,
+  DeleteIcon,
+  ArchiveIcon,
+  RestoreIcon,
+} from '@/components/ui/IconButton';
 import {
   useGetBlocksQuery,
   useGetLineItemsQuery,
@@ -17,9 +23,12 @@ import {
   useDeleteLineItemMutation,
 } from '@/api/client';
 import type { Block, BlockType, LineItem } from '@/types';
+import { useAppDispatch } from '@/store/hooks';
+import { pushToast } from '@/features/ui/uiSlice';
 import styles from './CategoryManager.module.scss';
 
 export function CategoryManager() {
+  const dispatch = useAppDispatch();
   const { data: blocks = [], isLoading: blocksLoading } = useGetBlocksQuery();
   const { data: lineItems = [] } = useGetLineItemsQuery();
 
@@ -41,6 +50,47 @@ export function CategoryManager() {
 
   // Delete confirmation
   const [confirm, setConfirm] = useState<{ message: string; action: () => void } | null>(null);
+
+  const removeBlock = async (block: Block) => {
+    try {
+      await deleteBlock(block.id).unwrap();
+      dispatch(pushToast({ message: `Block "${block.name}" deleted.`, tone: 'success' }));
+    } catch {
+      // Error toast comes from the global toast middleware.
+    }
+  };
+
+  const removeItem = async (item: LineItem) => {
+    try {
+      await deleteLineItem(item.id).unwrap();
+      dispatch(pushToast({ message: `Line item "${item.name}" deleted.`, tone: 'success' }));
+    } catch {
+      // Error toast comes from the global toast middleware.
+    }
+  };
+
+  const archiveItem = async (item: LineItem) => {
+    try {
+      await updateLineItem({ id: item.id, archived: true }).unwrap();
+      dispatch(
+        pushToast({
+          message: `"${item.name}" archived — hidden from dropdowns, history kept.`,
+          tone: 'success',
+        })
+      );
+    } catch {
+      // Error toast comes from the global toast middleware.
+    }
+  };
+
+  const restoreItem = async (item: LineItem) => {
+    try {
+      await updateLineItem({ id: item.id, archived: false }).unwrap();
+      dispatch(pushToast({ message: `"${item.name}" restored.`, tone: 'success' }));
+    } catch {
+      // Error toast comes from the global toast middleware.
+    }
+  };
 
   const openNewBlock = () => {
     setBlockName('');
@@ -104,6 +154,8 @@ export function CategoryManager() {
           const items = lineItems
             .filter((li) => li.blockId === block.id)
             .sort((a, b) => a.sortOrder - b.sortOrder);
+          const activeItems = items.filter((li) => !li.archived);
+          const archivedItems = items.filter((li) => li.archived);
           return (
             <div key={block.id} className={styles.block}>
               <div className={styles.blockHead}>
@@ -117,7 +169,7 @@ export function CategoryManager() {
                   </span>
                   <span className={styles.blockName}>{block.name}</span>
                   <span className={styles.count}>
-                    {items.length} item{items.length === 1 ? '' : 's'}
+                    {activeItems.length} item{activeItems.length === 1 ? '' : 's'}
                   </span>
                 </div>
                 <div className={styles.blockActions}>
@@ -130,7 +182,7 @@ export function CategoryManager() {
                     onClick={() =>
                       setConfirm({
                         message: `Delete "${block.name}" and its ${items.length} line item(s)? This can't be undone.`,
-                        action: () => deleteBlock(block.id),
+                        action: () => removeBlock(block),
                       })
                     }
                   >
@@ -140,7 +192,7 @@ export function CategoryManager() {
               </div>
 
               <ul className={styles.items}>
-                {items.map((item) => (
+                {activeItems.map((item) => (
                   <li key={item.id} className={styles.item}>
                     <span className={styles.itemName}>{item.name}</span>
                     <div className={styles.itemActions}>
@@ -151,12 +203,18 @@ export function CategoryManager() {
                         <EditIcon />
                       </IconButton>
                       <IconButton
+                        label="Archive line item"
+                        onClick={() => archiveItem(item)}
+                      >
+                        <ArchiveIcon />
+                      </IconButton>
+                      <IconButton
                         label="Delete line item"
                         variant="danger"
                         onClick={() =>
                           setConfirm({
                             message: `Delete line item "${item.name}"?`,
-                            action: () => deleteLineItem(item.id),
+                            action: () => removeItem(item),
                           })
                         }
                       >
@@ -165,10 +223,45 @@ export function CategoryManager() {
                     </div>
                   </li>
                 ))}
-                {items.length === 0 && (
+                {activeItems.length === 0 && (
                   <li className={styles.noItems}>No line items yet.</li>
                 )}
               </ul>
+
+              {archivedItems.length > 0 && (
+                <details className={styles.archived}>
+                  <summary className={styles.archivedSummary}>
+                    Archived ({archivedItems.length})
+                  </summary>
+                  <ul className={styles.items}>
+                    {archivedItems.map((item) => (
+                      <li key={item.id} className={`${styles.item} ${styles.archivedItem}`}>
+                        <span className={styles.itemName}>{item.name}</span>
+                        <div className={styles.itemActions}>
+                          <IconButton
+                            label="Restore line item"
+                            onClick={() => restoreItem(item)}
+                          >
+                            <RestoreIcon />
+                          </IconButton>
+                          <IconButton
+                            label="Delete line item"
+                            variant="danger"
+                            onClick={() =>
+                              setConfirm({
+                                message: `Delete line item "${item.name}"?`,
+                                action: () => removeItem(item),
+                              })
+                            }
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
 
               <button className={styles.addItem} onClick={() => openNewItem(block.id)}>
                 + Add line item

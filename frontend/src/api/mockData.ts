@@ -21,7 +21,8 @@ export const mockBlocks: Block[] = [
   { id: 6, name: 'Invest Block', type: 'INVESTMENT', sortOrder: 5 },
 ];
 
-export const mockLineItems: LineItem[] = [
+// `archived: false` is stamped onto every row below (mock data predates the flag).
+export const mockLineItems: LineItem[] = ([
   // Mandatory
   { id: 1, blockId: 1, name: 'Home', sortOrder: 0 },
   { id: 2, blockId: 1, name: 'Rent', sortOrder: 1 },
@@ -50,7 +51,7 @@ export const mockLineItems: LineItem[] = [
   { id: 20, blockId: 6, name: 'Stocks', sortOrder: 0 },
   { id: 21, blockId: 6, name: 'Mutual Funds', sortOrder: 1 },
   { id: 22, blockId: 6, name: 'T-Bill / Emergency', sortOrder: 2 },
-];
+] as Omit<LineItem, 'archived'>[]).map((li) => ({ ...li, archived: false }));
 
 export const mockPaymentSources: PaymentSource[] = [
   { id: 1, name: 'Credit Card', sortOrder: 0 },
