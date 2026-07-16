@@ -9,14 +9,16 @@ import { DonutChart } from '@/components/charts/DonutChart';
 import { BarChart } from '@/components/charts/BarChart';
 import { CountUp } from '@/components/ui/CountUp';
 import { MatrixTable } from './MatrixTable';
-import { useAppDispatch } from '@/store/hooks';
+import { PeriodModeToggle } from '@/components/ui/PeriodModeToggle';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { openQuickAdd } from '@/features/ui/uiSlice';
 import {
-  getYearSummaries,
+  getPeriodSummaries,
   getMonthlySeries,
   getBlockBreakdown,
-  sliceMatrixByYear,
+  sliceMatrixByPeriod,
 } from '@/utils/yearly';
+import { periodAnchor, periodLabel, periodRange } from '@/utils/period';
 import { annualBudget } from '@/utils/budgets';
 import { formatAmount } from '@/utils/format';
 import styles from './YearDetailPage.module.scss';
@@ -25,28 +27,34 @@ export function YearDetailPage() {
   const { year = '' } = useParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const mode = useAppSelector((s) => s.ui.periodMode);
   const { data, isLoading } = useGetMatrixQuery();
   const { data: budgets = [] } = useGetBudgetsQuery();
+
+  const anchor = Number(year);
+  const label = periodLabel(anchor, mode);
 
   if (isLoading) {
     return <div className={styles.state}><div className={styles.spinner} /></div>;
   }
-  const known = data?.months.some((m) => m.startsWith(year));
+  const known =
+    Number.isFinite(anchor) &&
+    data?.months.some((m) => periodAnchor(m, mode) === anchor);
   if (!data || !known) {
     return (
       <Card className={styles.empty}>
         <p>
-          No data for <strong>{year || 'that year'}</strong>. Back to the{' '}
+          No data for <strong>{label || 'that year'}</strong>. Back to the{' '}
           <Link to="/">overview</Link>.
         </p>
       </Card>
     );
   }
 
-  const summary = getYearSummaries(data).find((y) => y.year === year)!;
-  const series = getMonthlySeries(data, year);
-  const breakdown = getBlockBreakdown(data, year);
-  const yearMatrix = sliceMatrixByYear(data, year);
+  const summary = getPeriodSummaries(data, mode).find((y) => y.anchor === anchor)!;
+  const series = getMonthlySeries(data, anchor, mode);
+  const breakdown = getBlockBreakdown(data, anchor, mode);
+  const yearMatrix = sliceMatrixByPeriod(data, anchor, mode);
 
   // Annual budget vs actual per block (budget = carried-forward monthly sum).
   const budgetChart = data.blocks
@@ -67,14 +75,16 @@ export function YearDetailPage() {
   return (
     <div>
       <PageHeader
-        label="Year detail"
+        label={mode === 'fiscal' ? `Financial year · ${periodRange(anchor, mode)}` : 'Year detail'}
         title={
           <>
-            Year <span className="gradient-text">{year}</span>
+            {mode === 'fiscal' ? 'FY ' : 'Year '}
+            <span className="gradient-text">{anchor}</span>
           </>
         }
         actions={
           <>
+            <PeriodModeToggle />
             <Button variant="secondary" onClick={() => navigate('/')}>
               ← Overview
             </Button>
@@ -126,7 +136,7 @@ export function YearDetailPage() {
 
       {budgetChart.length > 0 && (
         <Card className={styles.budgetCard}>
-          <h3 className={styles.chartTitle}>Budget vs Actual — {year} (annual)</h3>
+          <h3 className={styles.chartTitle}>Budget vs Actual — {label} (annual)</h3>
           <BarChart
             groups={budgetChart.map((b) => ({ label: b.label, values: [b.budget, b.actual] }))}
             series={[

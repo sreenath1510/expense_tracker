@@ -22,6 +22,7 @@ import { CountUp } from '@/components/ui/CountUp';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { openQuickAdd, setBlockOrder } from '@/features/ui/uiSlice';
 import { formatAmount, formatMonthKey, formatLedgerDate } from '@/utils/format';
+import { periodAnchor, periodLabel } from '@/utils/period';
 import { effectiveBudget } from '@/utils/budgets';
 import type { MonthTransaction } from '@/types';
 import { EditTransactionDialog } from './EditTransactionDialog';
@@ -42,6 +43,7 @@ export function MonthDetailPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const blockOrder = useAppSelector((s) => s.ui.blockOrder);
+  const periodMode = useAppSelector((s) => s.ui.periodMode);
 
   const { data: matrix, isLoading: matrixLoading } = useGetMatrixQuery();
   const { data: txns = [], isLoading: txnLoading } = useGetTransactionsByMonthQuery(monthKey);
@@ -114,6 +116,10 @@ export function MonthDetailPage() {
   }, [filtered, blockOrder, sortMode]);
 
   const { label, year } = formatMonthKey(monthKey);
+  // Back-nav targets the month's parent period, which under fiscal mode is the
+  // April-anchored year (e.g. Feb 2026 belongs to FY 2025), not the calendar year.
+  const parentAnchor = monthKey ? periodAnchor(monthKey, periodMode) : Number(year);
+  const parentLabel = periodLabel(parentAnchor, periodMode);
   const filteredTotal = filtered.reduce((s, t) => s + t.amount, 0);
   const incomeTotal = income.reduce((s, e) => s + e.amount, 0);
   const sourceName = sourceFilter
@@ -190,8 +196,8 @@ export function MonthDetailPage() {
         }
         actions={
           <>
-            <Button variant="secondary" onClick={() => navigate(`/year/${year}`)}>
-              ← {year}
+            <Button variant="secondary" onClick={() => navigate(`/year/${parentAnchor}`)}>
+              ← {parentLabel}
             </Button>
             <Button variant="primary" onClick={() => dispatch(openQuickAdd(monthKey))}>
               + Quick Add

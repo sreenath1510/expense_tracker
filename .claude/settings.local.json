@@ -41,7 +41,10 @@
       "Bash(rm -f 'C:\\\\Users\\\\Shreenath/.archtest_token')",
       "Bash(.venv/Scripts/python.exe -m scripts.import_legacy_excel --file \"C:/Users/Shreenath/Downloads/Monthly Expenses Copy.xlsx\" --username sreenath)",
       "Bash(.venv/Scripts/python.exe -m scripts.import_legacy_excel --file \"C:/Users/Shreenath/Downloads/Monthly Expenses Copy.xlsx\" --username sreenath --dry-run)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(curl -s -o /dev/null -w \"healthz: %{http_code}\\\\n\" https://expense-tracker-six-delta-23.vercel.app/api/healthz)",
+      "Bash(curl -s -X POST https://expense-tracker-six-delta-23.vercel.app/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"probe\",\"password\":\"probe\"}' -o /dev/null -w \"login: %{http_code}\\\\n\")",
+      "Bash(npx vercel *)"
     ]
   }
 }

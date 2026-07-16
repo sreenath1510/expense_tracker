@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/Button';
 import { BarChart } from '@/components/charts/BarChart';
 import { Sparkline } from '@/components/charts/Sparkline';
 import { CountUp } from '@/components/ui/CountUp';
+import { PeriodModeToggle } from '@/components/ui/PeriodModeToggle';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { openQuickAdd } from '@/features/ui/uiSlice';
-import { getYearSummaries } from '@/utils/yearly';
+import { getPeriodSummaries } from '@/utils/yearly';
 import { formatAmount } from '@/utils/format';
 import styles from './DashboardPage.module.scss';
 
@@ -18,6 +19,7 @@ export function DashboardPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const token = useAppSelector((s) => s.auth.token);
+  const periodMode = useAppSelector((s) => s.ui.periodMode);
   const { data, isLoading, isError } = useGetMatrixQuery();
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -88,7 +90,7 @@ export function DashboardPage() {
     );
   }
 
-  const years = getYearSummaries(data);
+  const years = getPeriodSummaries(data, periodMode);
 
   return (
     <div>
@@ -101,6 +103,7 @@ export function DashboardPage() {
         }
         actions={
           <>
+            <PeriodModeToggle />
             <Button variant="secondary" onClick={() => fileRef.current?.click()} disabled={busy !== null}>
               {busy === 'import' ? 'Importing…' : 'Import'}
             </Button>
@@ -130,15 +133,15 @@ export function DashboardPage() {
       <div className={styles.yearGrid}>
         {years.map((y, i) => (
           <motion.button
-            key={y.year}
+            key={y.anchor}
             className={styles.yearCard}
-            onClick={() => navigate(`/year/${y.year}`)}
+            onClick={() => navigate(`/year/${y.anchor}`)}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className={styles.yearTop}>
-              <span className={styles.year}>{y.year}</span>
+              <span className={styles.year}>{y.label}</span>
               <span
                 className={`${styles.rate} ${y.savingsRate >= 0 ? styles.ratePos : styles.rateNeg}`}
               >
@@ -173,7 +176,7 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <span className={styles.open}>View {y.year} →</span>
+            <span className={styles.open}>View {y.label} →</span>
           </motion.button>
         ))}
       </div>
@@ -185,7 +188,7 @@ export function DashboardPage() {
           groups={years
             .slice()
             .reverse()
-            .map((y) => ({ label: y.year, values: [y.income, y.expenditure, y.investments] }))}
+            .map((y) => ({ label: y.label, values: [y.income, y.expenditure, y.investments] }))}
           series={[
             { label: 'Income', color: '#0f9d58' },
             { label: 'Expenditure', color: '#0052ff' },

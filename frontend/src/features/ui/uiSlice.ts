@@ -9,11 +9,22 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
+import type { PeriodMode } from '@/utils/period';
+
 const COLLAPSED_KEY = 'ledger.sidebarCollapsed';
 const BLOCK_ORDER_KEY = 'ledger.blockOrder';
 const THEME_KEY = 'ledger.theme';
+const PERIOD_MODE_KEY = 'ledger.periodMode';
 
 type Theme = 'light' | 'dark';
+
+function initialPeriodMode(): PeriodMode {
+  // Fiscal (Apr–Mar) is the default — it matches how this ledger's data is
+  // organized. Persisted so the choice sticks across visits.
+  return localStorage.getItem(PERIOD_MODE_KEY) === 'calendar'
+    ? 'calendar'
+    : 'fiscal';
+}
 
 export type ToastTone = 'success' | 'error' | 'info';
 
@@ -49,6 +60,8 @@ function applyTheme(theme: Theme) {
 interface UiState {
   sidebarCollapsed: boolean;
   theme: Theme;
+  /** Calendar (Jan–Dec) vs fiscal (Apr–Mar) year windowing. Persisted. */
+  periodMode: PeriodMode;
   quickAddOpen: boolean;
   /** When opened from a month screen, prefill the date into this month. */
   quickAddMonth: string | null;
@@ -61,6 +74,7 @@ interface UiState {
 const initialState: UiState = {
   sidebarCollapsed: localStorage.getItem(COLLAPSED_KEY) === 'true',
   theme: initialTheme(),
+  periodMode: initialPeriodMode(),
   quickAddOpen: false,
   quickAddMonth: null,
   blockOrder: loadBlockOrder(),
@@ -116,6 +130,10 @@ const uiSlice = createSlice({
     dismissToast(state, action: PayloadAction<number>) {
       state.toasts = state.toasts.filter((t) => t.id !== action.payload);
     },
+    setPeriodMode(state, action: PayloadAction<PeriodMode>) {
+      state.periodMode = action.payload;
+      localStorage.setItem(PERIOD_MODE_KEY, action.payload);
+    },
   },
 });
 
@@ -129,5 +147,6 @@ export const {
   setTheme,
   pushToast,
   dismissToast,
+  setPeriodMode,
 } = uiSlice.actions;
 export default uiSlice.reducer;

@@ -29,3 +29,6 @@ frontend/.env*
 Thumbs.db
 .idea/
 .vscode/
+
+.vercel
+.env*
