@@ -7,7 +7,12 @@
 .scroller {
   @include card-surface;
   @include thin-scrollbar;
-  overflow-x: auto;
+  // A bounded 2D viewport: months scroll horizontally, rows vertically, while
+  // the header row (thead, sticky top) and the category column (sticky left)
+  // stay frozen — like a spreadsheet. Capped to the viewport so the header is
+  // always in reach; short tables stay their natural height (no inner scroll).
+  overflow: auto;
+  max-height: calc(100vh - 2rem);
   padding: 0;
 }
 
@@ -52,7 +57,10 @@ thead th {
 }
 
 .monthHead {
-  position: relative;
+  // sticky (not relative) so the header row freezes on vertical scroll; it
+  // still establishes the containing block the .monthOpen icon anchors to.
+  position: sticky;
+  top: 0;
   text-align: right;
   min-width: 7rem;
   cursor: pointer;

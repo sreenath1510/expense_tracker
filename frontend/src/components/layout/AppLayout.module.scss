@@ -11,7 +11,11 @@
   min-width: 0; // allows the wide matrix to scroll instead of blowing out layout
   position: relative;
   padding: $space-8 $space-6;
-  overflow-x: hidden;
+  // `clip` (not `hidden`) contains horizontal overflow WITHOUT turning this
+  // into a scroll container — `overflow-x: hidden` would force overflow-y to
+  // compute to `auto`, which silently breaks every `position: sticky` header
+  // in the app (they'd pin to this box instead of the viewport).
+  overflow-x: clip;
 
   // Ambient radial glow in the corner (theme.md > Textures: radial glows)
   &::before {

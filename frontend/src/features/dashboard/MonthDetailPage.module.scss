@@ -103,7 +103,11 @@
 }
 
 .groupCard {
-  overflow: hidden;
+  // No overflow clipping here: any clip/hidden ancestor becomes the sticky
+  // header's containing scroll box (Chromium treats even `clip` that way), which
+  // would pin the header to the card instead of the viewport. The header's
+  // background matches the card, so the corners still read cleanly at rest.
+  overflow: visible;
 }
 
 // The income group isn't inside a .groupWrap (which carries the gap), so it
@@ -118,6 +122,11 @@
   justify-content: space-between;
   width: 100%;
   background: var(--card);
+  // Freeze the accordion head while its rows scroll; the enclosing card clips
+  // it away as the next block arrives. z-index keeps it above the rows beneath.
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 // The clickable expand/collapse region (everything except the actions).
@@ -141,7 +150,13 @@
 }
 
 .incomeHeader {
-  background: rgba($color-positive, 0.05);
+  // Composite the tint over an opaque card base so the pinned header never
+  // lets scrolling rows show through it.
+  background: linear-gradient(
+      rgba($color-positive, 0.05),
+      rgba($color-positive, 0.05)
+    ),
+    var(--card);
 
   .groupToggle:hover {
     background: rgba($color-positive, 0.09);
