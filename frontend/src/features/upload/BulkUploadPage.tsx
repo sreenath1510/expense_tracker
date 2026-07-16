@@ -14,8 +14,10 @@ import {
   setLineItemForRows,
   setPaymentSourceForRows,
   removeRow,
+  removeRows,
   clearUpload,
 } from './uploadSlice';
+import { pushToast } from '@/features/ui/uiSlice';
 import {
   useGetBlocksQuery,
   useGetLineItemsQuery,
@@ -100,19 +102,42 @@ export function BulkUploadPage() {
   const handleSaveAll = async () => {
     const ready = rows.filter(isSavable);
     if (ready.length === 0) return;
-    const res = await batchSave(
-      ready.map((r) => ({
-        txnDate: r.date,
-        amount: r.amount,
-        lineItemId: r.lineItemId!,
-        paymentSourceId: r.paymentSourceId!,
-        description: r.description,
-      })),
-    ).unwrap();
-    setSavedCount(res.inserted ?? ready.length);
-    dispatch(clearUpload());
-    setFileName(null);
-    setSelected(new Set());
+    const savedIds = ready.map((r) => r.rowId);
+    try {
+      const res = await batchSave(
+        ready.map((r) => ({
+          txnDate: r.date,
+          amount: r.amount,
+          lineItemId: r.lineItemId!,
+          paymentSourceId: r.paymentSourceId!,
+          description: r.description,
+        })),
+      ).unwrap();
+      const inserted = res.inserted ?? ready.length;
+      const remaining = rows.length - savedIds.length;
+
+      // Retire only what was banked. Everything still uncategorized stays on
+      // the table so a long statement can be saved off in batches.
+      dispatch(removeRows(savedIds));
+      setSelected((prev) => {
+        const next = new Set(prev);
+        savedIds.forEach((id) => next.delete(id));
+        return next;
+      });
+      setSavedCount((prev) => (prev ?? 0) + inserted);
+      dispatch(
+        pushToast({
+          message:
+            remaining > 0
+              ? `Saved ${inserted} transaction${inserted === 1 ? '' : 's'} — ${remaining} row${remaining === 1 ? '' : 's'} left to categorize.`
+              : `Saved ${inserted} transaction${inserted === 1 ? '' : 's'}.`,
+          tone: 'success',
+        }),
+      );
+      if (remaining === 0) setFileName(null);
+    } catch {
+      // The rows stay put on failure; the error toast comes from the middleware.
+    }
   };
 
   const handleDiscard = () => {
@@ -130,7 +155,7 @@ export function BulkUploadPage() {
             Import a <span className="gradient-text">statement</span>
           </>
         }
-        description="Drop in a CSV or PDF bank/card statement. We parse the rows — you map each one to a category and payment source, fix anything mis-read, then save everything in one go."
+        description="Drop in a CSV or PDF bank/card statement. We parse the rows — you map each one to a category and payment source, fix anything mis-read, and save as you go. Saved rows leave the table; the rest wait for you."
         actions={
           rows.length > 0 ? (
             <Button variant="secondary" onClick={handleDiscard}>
@@ -201,6 +226,9 @@ export function BulkUploadPage() {
               <span className={styles.progress}>
                 {mappedCount} of {rows.length} mapped
               </span>
+              {savedCount !== null && savedCount > 0 && (
+                <span className={styles.savedPill}>✓ {savedCount} saved</span>
+              )}
               {selected.size > 0 && (
                 <span className={styles.selectedPill}>
                   {selected.size} selected — set a dropdown to apply to all
@@ -421,10 +449,10 @@ export function BulkUploadPage() {
             <div className={styles.saveBar}>
               <span className={styles.saveHint}>
                 {badDateCount > 0
-                  ? `${badDateCount} row(s) have an unreadable date — set it in the Date column. Those rows are skipped.`
+                  ? `${badDateCount} row(s) have an unreadable date — set it in the Date column. They stay on the table.`
                   : allMapped
                   ? 'All rows mapped — ready to save.'
-                  : `${rows.length - mappedCount} row(s) still need a category and source. Unmapped rows are skipped.`}
+                  : `Save as you go — categorized rows are banked, the other ${rows.length - mappedCount} stay on the table.`}
               </span>
               <Button
                 variant="primary"

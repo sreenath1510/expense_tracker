@@ -80,6 +80,13 @@ const uploadSlice = createSlice({
     removeRow(state, action: PayloadAction<string>) {
       state.rows = state.rows.filter((r) => r.rowId !== action.payload);
     },
+    // Drop several rows at once. Used after a save so the banked rows leave the
+    // table while everything still uncategorized stays put — a long statement
+    // can be worked through in passes rather than one all-or-nothing sitting.
+    removeRows(state, action: PayloadAction<string[]>) {
+      const ids = new Set(action.payload);
+      state.rows = state.rows.filter((r) => !ids.has(r.rowId));
+    },
     clearUpload(state) {
       state.rows = [];
     },
@@ -97,6 +104,7 @@ export const {
   setLineItemForRows,
   setPaymentSourceForRows,
   removeRow,
+  removeRows,
   clearUpload,
 } = uploadSlice.actions;
 
