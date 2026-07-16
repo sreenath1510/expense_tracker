@@ -65,15 +65,40 @@ def _parse_amount(value) -> float | None:
     return -abs(amount) if negative else amount
 
 
+# Day-first formats first: Indian statements write 24/04/26 as 24 April 2026.
+# %y maps a 2-digit year to 2000-2068, which covers any ledger data we'd import.
+_DATE_FORMATS = (
+    "%Y-%m-%d", "%Y/%m/%d",
+    "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y",
+    "%d/%m/%y", "%d-%m-%y", "%d.%m.%y",
+    "%d-%b-%Y", "%d %b %Y", "%d-%b-%y", "%d %b %y",
+    "%d-%B-%Y", "%d %B %Y",
+)
+
+
 def _format_date(value) -> str:
-    """Format various date inputs to ISO YYYY-MM-DD, or pass strings through."""
+    """Format various date inputs to ISO YYYY-MM-DD.
+
+    Callers need a real date (the transaction API's txn_date is a date), so a
+    string is parsed rather than passed through; unrecognized text is returned
+    as-is for the mapping UI to flag.
+    """
     if value is None:
         return ""
     if isinstance(value, datetime):
         return value.date().isoformat()
     if isinstance(value, date):
         return value.isoformat()
-    return str(value).strip()
+
+    text = str(value).strip()
+    if not text:
+        return ""
+    for fmt in _DATE_FORMATS:
+        try:
+            return datetime.strptime(text, fmt).date().isoformat()
+        except ValueError:
+            continue
+    return text
 
 
 def _read_csv_rows(contents: bytes) -> list[list]:

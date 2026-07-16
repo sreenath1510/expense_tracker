@@ -230,6 +230,18 @@
   color: var(--muted-foreground);
 }
 
+// Only rendered when the statement's date couldn't be read, so it's styled as
+// a warning — the row stays out of the save until a date is picked.
+.dateInput {
+  min-width: 8.5rem;
+  border-color: rgba($color-negative, 0.5);
+  color: var(--negative);
+
+  &:hover {
+    border-color: var(--negative);
+  }
+}
+
 .amountInput {
   text-align: right;
   font-weight: 600;

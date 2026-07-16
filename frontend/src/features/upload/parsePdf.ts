@@ -15,16 +15,12 @@ import * as pdfjsLib from 'pdfjs-dist';
 // Vite resolves this to a hashed asset URL and serves the worker as a module.
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import type { RawStatementRow } from '@/types';
+import { toIsoDate } from './statementDate';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 let rowCounter = 0;
 const tempId = () => `pdf_${Date.now()}_${rowCounter++}`;
-
-const MONTHS: Record<string, number> = {
-  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
-  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
-};
 
 // A leading date: 01/02/2025, 01-02-25, 1.2.2025, 01 Feb 2025, 01-Feb-2025.
 const DATE_RE =
@@ -34,25 +30,6 @@ const DATE_RE =
 // mistake reference/cheque numbers for amounts. Optional currency + Cr/Dr.
 const AMOUNT_RE =
   /(?:₹|rs\.?|inr)?\s?\(?-?\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?\)?|\(?-?\d+\.\d{2}\)?/gi;
-
-function pad(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
-/** Normalize a matched date to ISO YYYY-MM-DD (day-first, as Indian banks use). */
-function toISO(day: string, monthRaw: string, yearRaw: string): string {
-  let month: number;
-  if (/^[A-Za-z]+$/.test(monthRaw)) {
-    month = MONTHS[monthRaw.slice(0, 3).toLowerCase()] ?? NaN;
-  } else {
-    month = Number(monthRaw);
-  }
-  let year = Number(yearRaw);
-  if (yearRaw.length === 2) year += 2000;
-  const d = Number(day);
-  if (!month || Number.isNaN(month) || !d || !year) return `${day} ${monthRaw} ${yearRaw}`;
-  return `${year}-${pad(month)}-${pad(d)}`;
-}
 
 /** "1,234.50" / "(500.00)" / "₹1,200" -> number (always positive magnitude). */
 function parseAmount(raw: string): number {
@@ -115,7 +92,9 @@ function parseLine(line: string): RawStatementRow | null {
 
   return {
     rowId: tempId(),
-    date: toISO(dateMatch[1], dateMatch[2], dateMatch[3]),
+    // Fall back to the raw match when unreadable so the row is flagged in the
+    // mapping table instead of being rejected by the API on save.
+    date: toIsoDate(dateMatch[0]) ?? dateMatch[0],
     amount,
     description,
   };

@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   loadParsedRows,
   setRowAmount,
+  setRowDate,
   setAllLineItems,
   setAllPaymentSources,
   setLineItemForRows,
@@ -22,6 +23,7 @@ import {
   useBatchCreateTransactionsMutation,
 } from '@/api/client';
 import { parseStatementFile } from './parseStatement';
+import { isIsoDate } from './statementDate';
 import { formatLedgerDate } from '@/utils/format';
 import styles from './BulkUploadPage.module.scss';
 
@@ -84,11 +86,19 @@ export function BulkUploadPage() {
     }
   };
 
+  // A row can only be saved once it's mapped AND its date parsed to a real
+  // calendar date — the API's txnDate is a date, so an unreadable one would be
+  // rejected for the whole batch.
+  const isSavable = (r: (typeof rows)[number]) =>
+    Boolean(r.lineItemId && r.paymentSourceId && isIsoDate(r.date));
+
   const mappedCount = rows.filter((r) => r.lineItemId && r.paymentSourceId).length;
+  const badDateCount = rows.filter((r) => !isIsoDate(r.date)).length;
+  const savableCount = rows.filter(isSavable).length;
   const allMapped = rows.length > 0 && mappedCount === rows.length;
 
   const handleSaveAll = async () => {
-    const ready = rows.filter((r) => r.lineItemId && r.paymentSourceId);
+    const ready = rows.filter(isSavable);
     if (ready.length === 0) return;
     const res = await batchSave(
       ready.map((r) => ({
@@ -293,7 +303,26 @@ export function BulkUploadPage() {
                             onChange={() => toggleSelected(row.rowId)}
                           />
                         </td>
-                        <td className={styles.dateCell}>{formatLedgerDate(row.date)}</td>
+                        <td className={styles.dateCell}>
+                          {isIsoDate(row.date) ? (
+                            formatLedgerDate(row.date)
+                          ) : (
+                            // Couldn't read the statement's date — let the user
+                            // set it here rather than fail the whole batch.
+                            <input
+                              className={`${styles.cellInput} ${styles.dateInput}`}
+                              type="date"
+                              aria-label={`Date for ${row.description}`}
+                              title={`Couldn't read "${row.date}" — pick the date`}
+                              value=""
+                              onChange={(e) =>
+                                dispatch(
+                                  setRowDate({ rowId: row.rowId, date: e.target.value }),
+                                )
+                              }
+                            />
+                          )}
+                        </td>
                         <td className={styles.right}>
                           <div className={styles.amountField}>
                             <span className={styles.rupee}>₹</span>
@@ -391,7 +420,9 @@ export function BulkUploadPage() {
 
             <div className={styles.saveBar}>
               <span className={styles.saveHint}>
-                {allMapped
+                {badDateCount > 0
+                  ? `${badDateCount} row(s) have an unreadable date — set it in the Date column. Those rows are skipped.`
+                  : allMapped
                   ? 'All rows mapped — ready to save.'
                   : `${rows.length - mappedCount} row(s) still need a category and source. Unmapped rows are skipped.`}
               </span>
@@ -399,9 +430,9 @@ export function BulkUploadPage() {
                 variant="primary"
                 size="lg"
                 onClick={handleSaveAll}
-                disabled={mappedCount === 0 || saving}
+                disabled={savableCount === 0 || saving}
               >
-                {saving ? 'Saving…' : `Save ${mappedCount} transaction${mappedCount === 1 ? '' : 's'}`}
+                {saving ? 'Saving…' : `Save ${savableCount} transaction${savableCount === 1 ? '' : 's'}`}
               </Button>
             </div>
           </Card>

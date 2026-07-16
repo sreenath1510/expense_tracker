@@ -9,6 +9,7 @@
 // untouched — and so is the future swap to a FastAPI `/upload/parse` route.
 
 import type { RawStatementRow } from '@/types';
+import { toIsoDate } from './statementDate';
 
 let rowCounter = 0;
 const tempId = () => `row_${Date.now()}_${rowCounter++}`;
@@ -91,9 +92,12 @@ async function parseCsvFile(file: File): Promise<RawStatementRow[]> {
     const cells = splitCsvLine(lines[i]);
     const amount = parseAmount(cells[amountIdx] ?? '');
     if (Number.isNaN(amount)) continue; // skip non-data rows
+    const rawDate = (cells[dateIdx] ?? '').trim();
     rows.push({
       rowId: tempId(),
-      date: (cells[dateIdx] ?? '').trim(),
+      // ISO or, when unreadable, the raw text so the row is visibly flagged
+      // in the mapping table rather than rejected by the API on save.
+      date: toIsoDate(rawDate) ?? rawDate,
       amount: Math.abs(amount), // store positive; type (expense/invest) comes from the mapped block
       description: (cells[descIdx] ?? '').trim(),
     });
