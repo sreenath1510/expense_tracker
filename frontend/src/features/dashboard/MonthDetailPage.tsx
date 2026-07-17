@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -9,6 +9,7 @@ import {
   useGetBudgetsQuery,
   useDeleteTransactionMutation,
   useDeleteIncomeEntryMutation,
+  useUpsertRemarkMutation,
 } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -20,7 +21,7 @@ import { IconButton, EditIcon, DeleteIcon } from '@/components/ui/IconButton';
 import { BarChart } from '@/components/charts/BarChart';
 import { CountUp } from '@/components/ui/CountUp';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { openQuickAdd, setBlockOrder } from '@/features/ui/uiSlice';
+import { openQuickAdd, setBlockOrder, pushToast } from '@/features/ui/uiSlice';
 import { formatAmount, formatMonthKey, formatLedgerDate } from '@/utils/format';
 import { periodAnchor, periodLabel } from '@/utils/period';
 import { effectiveBudget } from '@/utils/budgets';
@@ -52,10 +53,16 @@ export function MonthDetailPage() {
   const { data: budgets = [] } = useGetBudgetsQuery();
   const [deleteTransaction] = useDeleteTransactionMutation();
   const [deleteIncome] = useDeleteIncomeEntryMutation();
+  const [upsertRemark, { isLoading: savingRemark }] = useUpsertRemarkMutation();
 
   const [query, setQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState(''); // '' = all payment sources
   const [sortMode, setSortMode] = useState<'custom' | 'desc' | 'asc'>('custom');
+  // 'detailed' = the per-transaction accordion; 'summary' = read-only roll-up
+  // of each block's line items, this month's column of the year matrix.
+  const [viewMode, setViewMode] = useState<'detailed' | 'summary'>('detailed');
+  // null = not editing; a string = the in-progress remark draft.
+  const [remarkDraft, setRemarkDraft] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set()); // collapsed by default
   const [incomeExpanded, setIncomeExpanded] = useState(false);
   const [editing, setEditing] = useState<MonthTransaction | null>(null);
@@ -115,6 +122,28 @@ export function MonthDetailPage() {
     return arr;
   }, [filtered, blockOrder, sortMode]);
 
+  // Roll each block's transactions up to one line per line item — 10 cab rows
+  // become "Cab · ₹4,000". Built from `groups`, so it inherits the active
+  // search/source filter and block ordering. Biggest spend first within a block.
+  const summaryGroups = useMemo(
+    () =>
+      groups.map((g) => {
+        const byItem = new Map<number, { lineItemId: number; name: string; total: number }>();
+        for (const t of g.rows) {
+          const existing = byItem.get(t.lineItemId);
+          if (existing) existing.total += t.amount;
+          else
+            byItem.set(t.lineItemId, {
+              lineItemId: t.lineItemId,
+              name: t.lineItemName,
+              total: t.amount,
+            });
+        }
+        return { ...g, items: [...byItem.values()].sort((a, b) => b.total - a.total) };
+      }),
+    [groups],
+  );
+
   const { label, year } = formatMonthKey(monthKey);
   // Back-nav targets the month's parent period, which under fiscal mode is the
   // April-anchored year (e.g. Feb 2026 belongs to FY 2025), not the calendar year.
@@ -136,8 +165,43 @@ export function MonthDetailPage() {
       ]
     : [];
 
+  // Bottom line of the summary view. Deliberately the month's real totals —
+  // the same numbers (and source) as the stat cards at the top of this page, so
+  // an active filter can't make the two disagree. Income and Balance have no
+  // per-payment-source meaning anyway.
+  const monthTotals = summary
+    ? [
+        { key: 'income', label: 'Total Income', value: summary.totalIncome[monthKey] ?? 0, tone: 'income' as const },
+        { key: 'exp', label: 'Total Expenditure', value: summary.totalExpenditure[monthKey] ?? 0, tone: 'plain' as const },
+        { key: 'invest', label: 'Total Investments', value: summary.totalInvestments[monthKey] ?? 0, tone: 'invest' as const },
+        { key: 'balance', label: 'Balance', value: summary.balance[monthKey] ?? 0, tone: 'balance' as const },
+      ]
+    : [];
+
   const monthValid = matrixLoading || (matrix?.months.includes(monthKey) ?? false);
   const loading = matrixLoading || txnLoading;
+
+  // The matrix payload already carries every month's remark, so the month page
+  // reads it straight from there — no extra request.
+  const remarkBody = matrix?.remarks[monthKey] ?? '';
+
+  const saveRemark = async () => {
+    if (remarkDraft === null) return;
+    const [y, m] = monthKey.split('-').map(Number);
+    try {
+      // Invalidates the Matrix tag, so the year matrix's Remarks row updates too.
+      await upsertRemark({ year: y, month: m, body: remarkDraft.trim() }).unwrap();
+      setRemarkDraft(null);
+      dispatch(
+        pushToast({
+          message: remarkDraft.trim() ? 'Remark saved.' : 'Remark cleared.',
+          tone: 'success',
+        }),
+      );
+    } catch {
+      // Draft stays open on failure; the error toast comes from the middleware.
+    }
+  };
 
   // Per-block actual (full month) + effective budget, for progress bars + chart.
   const blockBudget = (blockId: number) => effectiveBudget(budgets, blockId, monthKey);
@@ -246,6 +310,47 @@ export function MonthDetailPage() {
             ))}
           </div>
 
+          {/* Free-text note for the month — the year matrix's Remarks row */}
+          <Card className={styles.remarkCard}>
+            <div className={styles.remarkHead}>
+              <h3 className={styles.remarkTitle}>Remarks</h3>
+              {remarkDraft === null && remarkBody && (
+                <IconButton label="Edit remarks" onClick={() => setRemarkDraft(remarkBody)}>
+                  <EditIcon />
+                </IconButton>
+              )}
+            </div>
+
+            {remarkDraft === null ? (
+              remarkBody ? (
+                <pre className={styles.remarkText}>{remarkBody}</pre>
+              ) : (
+                <button className={styles.remarkAdd} onClick={() => setRemarkDraft('')}>
+                  + Add a note for {label} {year}
+                </button>
+              )
+            ) : (
+              <>
+                <textarea
+                  className={styles.remarkInput}
+                  value={remarkDraft}
+                  autoFocus
+                  rows={4}
+                  placeholder="What happened this month? Unusual spikes, one-offs, things worth remembering…"
+                  onChange={(e) => setRemarkDraft(e.target.value)}
+                />
+                <div className={styles.remarkActions}>
+                  <Button variant="ghost" onClick={() => setRemarkDraft(null)}>
+                    Cancel
+                  </Button>
+                  <Button variant="primary" onClick={saveRemark} disabled={savingRemark}>
+                    {savingRemark ? 'Saving…' : 'Save'}
+                  </Button>
+                </div>
+              </>
+            )}
+          </Card>
+
           {/* Budget vs Actual for the month */}
           {budgetChart.length > 0 && (
             <Card className={styles.budgetChartCard}>
@@ -293,14 +398,34 @@ export function MonthDetailPage() {
               <option value="desc">Total: High → Low</option>
               <option value="asc">Total: Low → High</option>
             </Select>
+            <div className={styles.viewToggle} role="group" aria-label="View mode">
+              {(
+                [
+                  ['detailed', 'Detailed', 'Every transaction, grouped by block'],
+                  ['summary', 'Summary', 'Cumulative total per line item'],
+                ] as const
+              ).map(([mode, text, title]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  title={title}
+                  aria-pressed={viewMode === mode}
+                  className={`${styles.viewBtn} ${viewMode === mode ? styles.viewActive : ''}`}
+                  onClick={() => setViewMode(mode)}
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
             <span className={styles.summaryMeta}>
               {filtered.length} txns{sourceName && ` · ${sourceName}`}
             </span>
             <span className={styles.summaryAmount}>₹{formatAmount(filteredTotal)}</span>
           </div>
 
-          {/* Income group (pinned at top) */}
-          {income.length > 0 && (
+          {/* Income group (pinned at top). The summary view is expenditure-only
+              — the month's income already sits in the stat cards above. */}
+          {viewMode === 'detailed' && income.length > 0 && (
             <Card padded={false} className={`${styles.groupCard} ${styles.incomeCard}`}>
               <div className={`${styles.groupHeader} ${styles.incomeHeader}`}>
                 <button
@@ -363,6 +488,65 @@ export function MonthDetailPage() {
           ) : groups.length === 0 ? (
             <Card className={styles.empty}>
               <p>{query ? `No transactions match “${query}”.` : 'No transactions this month yet.'}</p>
+            </Card>
+          ) : viewMode === 'summary' ? (
+            /* Cumulative roll-up: one row per line item, this month's column of
+               the year matrix. Read-only by design. */
+            <Card padded={false} className={styles.summaryCard}>
+              <table className={styles.summaryTable}>
+                <tbody>
+                  {summaryGroups.map((group) => (
+                    <Fragment key={group.blockId}>
+                      <tr className={styles.sumBlockRow}>
+                        <td className={styles.sumBlockName}>
+                          <span
+                            className={`${styles.dot} ${
+                              group.type === 'INVESTMENT' ? styles.invest : styles.expense
+                            }`}
+                          />
+                          {group.name}
+                        </td>
+                        <td />
+                      </tr>
+                      {group.items.map((item) => (
+                        <tr key={item.lineItemId} className={styles.sumItemRow}>
+                          <td className={styles.sumItemName}>{item.name}</td>
+                          <td className={styles.sumItemTotal}>₹{formatAmount(item.total)}</td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  ))}
+                </tbody>
+
+                {/* The month's bottom line, mirroring the year matrix's summary */}
+                <tfoot className={styles.sumFoot}>
+                  {monthTotals.map((row) => (
+                    <tr
+                      key={row.key}
+                      className={`${styles.sumFootRow} ${
+                        row.key === 'balance' ? styles.sumFootStrong : ''
+                      }`}
+                    >
+                      <td className={styles.sumFootLabel}>{row.label}</td>
+                      <td
+                        className={`${styles.sumFootValue} ${
+                          row.tone === 'income'
+                            ? styles.toneIncome
+                            : row.tone === 'invest'
+                            ? styles.toneInvest
+                            : row.tone === 'balance'
+                            ? row.value < 0
+                              ? styles.toneNegative
+                              : styles.tonePositive
+                            : ''
+                        }`}
+                      >
+                        ₹{formatAmount(row.value)}
+                      </td>
+                    </tr>
+                  ))}
+                </tfoot>
+              </table>
             </Card>
           ) : (
             groups.map((group) => {

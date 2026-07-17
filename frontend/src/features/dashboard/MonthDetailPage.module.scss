@@ -58,8 +58,79 @@
   &.invest { color: var(--investment); }
 }
 
-// One row: search · source filter · sort · count/source · total. The trailing
-// right padding lines the total up with each accordion's subtotal.
+// --- Remarks ----------------------------------------------------------------
+.remarkCard {
+  margin-bottom: $space-5;
+  padding: $space-4 $space-5;
+}
+
+.remarkHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.remarkTitle {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+// Imported remarks are multi-line numbered notes — keep their line breaks.
+.remarkText {
+  margin-top: $space-2;
+  font-family: var(--font-body);
+  font-size: $text-sm;
+  line-height: 1.6;
+  color: var(--foreground);
+  white-space: pre-wrap;
+}
+
+.remarkAdd {
+  margin-top: $space-1;
+  font-size: $text-sm;
+  font-weight: 500;
+  color: var(--accent);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.remarkInput {
+  width: 100%;
+  margin-top: $space-3;
+  padding: $space-3;
+  border: 1px solid var(--border);
+  border-radius: $radius-md;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  font-size: $text-sm;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color $duration-fast $ease-out, box-shadow $duration-fast $ease-out;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba($color-accent, 0.12);
+  }
+}
+
+.remarkActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+  margin-top: $space-3;
+}
+
+// One row: search · source filter · sort · view · count/source · total. The
+// trailing right padding lines the total up with each accordion's subtotal.
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -90,6 +161,155 @@
   font-variant-numeric: tabular-nums;
   color: var(--accent);
   white-space: nowrap;
+}
+
+// --- Detailed / Summary view switch -----------------------------------------
+.viewToggle {
+  display: inline-flex;
+  padding: 0.1875rem;
+  gap: 0.1875rem;
+  border-radius: $radius-md;
+  border: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.viewBtn {
+  padding: $space-1 $space-3;
+  border-radius: $radius-sm;
+  font-size: $text-xs;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  transition: color $duration-fast $ease-out, background $duration-fast $ease-out;
+
+  &:hover {
+    color: var(--foreground);
+  }
+
+  @include focus-ring;
+}
+
+.viewActive {
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: $shadow-sm;
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+// --- Cumulative summary table -----------------------------------------------
+.summaryCard {
+  overflow: hidden; // clip the row fills to the card's rounded corners
+}
+
+.summaryTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.sumBlockRow {
+  background: var(--muted);
+
+  td {
+    padding: $space-3 $space-4;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+.sumBlockName {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-weight: 700;
+  font-size: $text-sm;
+  color: var(--foreground);
+}
+
+.sumItemRow {
+  transition: background $duration-fast $ease-out;
+
+  &:hover {
+    background: rgba($color-accent, 0.03);
+  }
+
+  td {
+    padding: $space-2 $space-4;
+    border-bottom: 1px solid var(--border);
+  }
+
+  &:last-child td {
+    border-bottom: none;
+  }
+}
+
+.sumItemName {
+  padding-left: $space-8 !important; // indented under its block
+  font-size: $text-sm;
+  color: var(--muted-foreground);
+}
+
+.sumItemTotal {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: $text-sm;
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+// The month's bottom line — inverted surface, matching the year matrix's
+// summary block so the two read as the same thing.
+.sumFoot td {
+  background: var(--surface-inverse);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.sumFootRow td {
+  padding: $space-2 $space-4;
+}
+
+.sumFootRow:first-child td {
+  padding-top: $space-3;
+}
+
+.sumFootRow:last-child td {
+  padding-bottom: $space-3;
+}
+
+.sumFootLabel {
+  font-size: $text-sm;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.sumFootValue {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: $text-sm;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.sumFootStrong {
+  .sumFootLabel {
+    color: #fff;
+    font-weight: 600;
+  }
+}
+
+.toneIncome,
+.tonePositive {
+  color: #7fd1a6;
+}
+.toneNegative {
+  color: #ff8a8d;
+}
+.toneInvest {
+  color: #b8a6ff;
 }
 
 // --- Accordion group cards --------------------------------------------------
