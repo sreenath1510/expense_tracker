@@ -2,7 +2,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGetMatrixQuery, useGetBudgetsQuery } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Breadcrumb } from '@/components/layout/Breadcrumb';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { TrendChart } from '@/components/charts/TrendChart';
@@ -80,7 +79,6 @@ export function YearDetailPage() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: 'Overview', to: '/' }, { label }]} />
       <PageHeader
         label={mode === 'fiscal' ? `Financial year · ${periodRange(anchor, mode)}` : 'Year detail'}
         title={
@@ -94,6 +92,9 @@ export function YearDetailPage() {
             <PeriodModeToggle />
             <Button variant="secondary" onClick={() => navigate(`/upload?period=${anchor}`)}>
               Import
+            </Button>
+            <Button variant="secondary" onClick={() => navigate('/')}>
+              ← Overview
             </Button>
             <Button variant="primary" onClick={() => dispatch(openQuickAdd())}>
               + Quick Add

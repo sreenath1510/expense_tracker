@@ -161,35 +161,8 @@ thead th {
   background: var(--investment);
 }
 
-// The block's month total. Right-aligned and bold so it reads as the roll-up of
-// the line items beneath it, not as another line item.
 .blockSpacerCell {
   padding: $space-3 $space-4 $space-1;
-  text-align: right;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  white-space: nowrap;
-  color: var(--muted-foreground);
-}
-
-// Budget state. The tint is deliberately faint — at matrix density a saturated
-// fill across a whole row reads as an error state rather than information — and
-// the text color carries most of the signal.
-.underBudget {
-  background: rgba($color-positive, 0.09);
-  color: var(--positive);
-}
-
-.overBudget {
-  background: rgba($color-negative, 0.1);
-  color: var(--negative);
-}
-
-// The non-color half of the over-budget signal.
-.overMark {
-  margin-left: 0.3rem;
-  font-size: 0.6rem;
-  vertical-align: 0.1em;
 }
 
 // --- Line item rows ---------------------------------------------------------
@@ -220,6 +193,18 @@ thead th {
 
 .emptyCell {
   color: var(--border);
+}
+
+// Budget verdict, inherited from the block above. Text colour only: this lands
+// on every line item of a block for a given month, and a background wash at
+// that scale would read as a giant error state rather than a reading.
+// `!important` beats .amountCell's own colour, which is equally specific.
+.underBudget {
+  color: var(--positive) !important;
+}
+
+.overBudget {
+  color: var(--negative) !important;
 }
 
 // --- Summary block (emphasized, inverted-ish) -------------------------------

@@ -33,16 +33,31 @@ export function MatrixTable({ data, budgets = [] }: MatrixTableProps) {
   const navigate = useNavigate();
 
   /**
-   * How a block's month sits against its budget. Deliberately four states, not
-   * three: a month with no spend reads as neutral rather than green, because
-   * colouring an empty cell "under budget" would paint a wall of green across
-   * every future month you've budgeted but not yet spent.
+   * How a block's month sits against its budget — the verdict every line item
+   * beneath it inherits. Null means "leave it alone": no budget set, or no
+   * spend at all that month. That second case matters now that budgeting a
+   * future month makes it a matrix column; without it, every month you'd
+   * planned but not yet spent would read as a wall of green.
    */
-  const budgetState = (blockId: number, monthKey: string, actual: number) => {
-    if (!budgets.length || actual === 0) return null;
+  const budgetState = (blockId: number, monthKey: string) => {
+    if (!budgets.length) return null;
+    const block = blocks.find((b) => b.blockId === blockId);
+    const actual = block?.subtotals[monthKey] ?? 0;
+    if (actual === 0) return null;
     const budget = effectiveBudget(budgets, blockId, monthKey);
     if (budget == null || budget <= 0) return null;
-    return { over: actual > budget, budget, ratio: actual / budget };
+    return { over: actual > budget, budget, actual, ratio: actual / budget };
+  };
+
+  const budgetTitle = (
+    blockName: string,
+    monthKey: string,
+    state: { over: boolean; budget: number; actual: number; ratio: number },
+  ) => {
+    const { label, year } = formatMonthKey(monthKey);
+    return `${blockName} · ${label} ${year} — ₹${formatAmount(state.actual)} of ₹${formatAmount(
+      state.budget,
+    )} budget (${Math.round(state.ratio * 100)}%${state.over ? ', over' : ''})`;
   };
 
   // Summary rows config — drives both rendering and the semantic coloring.
@@ -116,36 +131,9 @@ export function MatrixTable({ data, budgets = [] }: MatrixTableProps) {
                 />
                 {block.blockName}
               </td>
-              {months.map((m) => {
-                const actual = block.subtotals[m] ?? 0;
-                const state = budgetState(block.blockId, m, actual);
-                const { label, year } = formatMonthKey(m);
-                return (
-                  <td
-                    key={m}
-                    className={`${styles.blockSpacerCell} ${
-                      state ? (state.over ? styles.overBudget : styles.underBudget) : ''
-                    }`}
-                    title={
-                      state
-                        ? `${block.blockName} · ${label} ${year} — ₹${formatAmount(
-                            actual,
-                          )} of ₹${formatAmount(state.budget)} budget (${Math.round(
-                            state.ratio * 100,
-                          )}%)`
-                        : undefined
-                    }
-                  >
-                    {formatAmount(actual)}
-                    {/* Colour never carries the meaning on its own. */}
-                    {state?.over && (
-                      <span className={styles.overMark} aria-label="over budget">
-                        ▲
-                      </span>
-                    )}
-                  </td>
-                );
-              })}
+              {months.map((m) => (
+                <td key={m} className={styles.blockSpacerCell} />
+              ))}
             </tr>
 
             {/* Line item rows */}
@@ -154,16 +142,24 @@ export function MatrixTable({ data, budgets = [] }: MatrixTableProps) {
                 <td className={`${styles.itemLabel} ${styles.stickyCol}`}>
                   {row.lineItemName}
                 </td>
-                {months.map((m) => (
-                  <td
-                    key={m}
-                    className={`${styles.amountCell} ${
-                      row.cells[m] === 0 ? styles.emptyCell : ''
-                    }`}
-                  >
-                    {formatAmount(row.cells[m] ?? 0)}
-                  </td>
-                ))}
+                {months.map((m) => {
+                  const value = row.cells[m] ?? 0;
+                  // The budget lives on the block, so the whole column of line
+                  // items under it carries that month's verdict together — an
+                  // individual line item has no budget of its own to beat.
+                  const state = value === 0 ? null : budgetState(block.blockId, m);
+                  return (
+                    <td
+                      key={m}
+                      className={`${styles.amountCell} ${value === 0 ? styles.emptyCell : ''} ${
+                        state ? (state.over ? styles.overBudget : styles.underBudget) : ''
+                      }`}
+                      title={state ? budgetTitle(block.blockName, m, state) : undefined}
+                    >
+                      {formatAmount(value)}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </motion.tbody>

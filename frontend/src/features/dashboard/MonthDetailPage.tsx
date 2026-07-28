@@ -12,7 +12,6 @@ import {
   useUpsertRemarkMutation,
 } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Breadcrumb } from '@/components/layout/Breadcrumb';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -333,15 +332,6 @@ export function MonthDetailPage() {
 
   return (
     <div>
-      {monthValid && (
-        <Breadcrumb
-          items={[
-            { label: 'Overview', to: '/' },
-            { label: parentLabel, to: `/year/${parentAnchor}` },
-            { label: `${label} ${year}` },
-          ]}
-        />
-      )}
       <PageHeader
         label="Month detail"
         title={
@@ -369,6 +359,9 @@ export function MonthDetailPage() {
             )}
             <Button variant="secondary" onClick={() => navigate(`/upload?period=${monthKey}`)}>
               Import
+            </Button>
+            <Button variant="secondary" onClick={() => navigate(`/year/${parentAnchor}`)}>
+              ← {parentLabel}
             </Button>
             <Button variant="primary" onClick={() => dispatch(openQuickAdd(monthKey))}>
               + Quick Add
