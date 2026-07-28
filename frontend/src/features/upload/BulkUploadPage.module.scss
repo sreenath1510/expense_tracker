@@ -74,6 +74,44 @@
   font-weight: 500;
 }
 
+// --- Period-scoped import banner --------------------------------------------
+.targetBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+  margin-bottom: $space-5;
+  padding: $space-4 $space-5;
+  border-left: 3px solid var(--accent);
+}
+
+.targetDot {
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.4rem;
+  border-radius: $radius-full;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.targetText {
+  font-size: $text-sm;
+  color: var(--foreground);
+}
+
+.targetRange {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  color: var(--muted-foreground);
+}
+
+.targetHint {
+  margin-top: $space-1;
+  font-size: $text-sm;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  max-width: 52rem;
+}
+
 // --- Toolbar ----------------------------------------------------------------
 .toolbar {
   display: flex;
@@ -251,6 +289,33 @@
   &:hover {
     border-color: var(--negative);
   }
+}
+
+// Anchored to the target period rather than read off the statement — same
+// warning treatment, but amber: the row is savable, just unverified.
+.dateAnchored {
+  border-color: rgba(245, 166, 35, 0.6);
+  color: #b45309;
+
+  &:hover {
+    border-color: #f5a623;
+  }
+}
+
+// A row dated outside the period being imported into. Flagged, never blocked.
+.outsideRow td {
+  background: rgba(245, 166, 35, 0.06);
+}
+
+.outsideFlag {
+  margin-left: $space-2;
+  padding: 0.05rem $space-2;
+  border-radius: $radius-full;
+  background: rgba(245, 166, 35, 0.14);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: #b45309;
+  cursor: help;
 }
 
 .amountInput {

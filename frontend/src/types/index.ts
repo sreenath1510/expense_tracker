@@ -170,4 +170,10 @@ export interface RawStatementRow {
 export interface MappedRow extends RawStatementRow {
   lineItemId: number | null;
   paymentSourceId: number | null;
+  /**
+   * The statement's date couldn't be read, so it was anchored to the period
+   * being imported into. The row stays editable and visibly flagged — an
+   * anchored date is a placeholder, not a parse result.
+   */
+  dateAnchored?: boolean;
 }

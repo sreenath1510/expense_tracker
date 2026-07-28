@@ -8,6 +8,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { MappedRow, RawStatementRow } from '@/types';
+import { isIsoDate } from './statementDate';
 
 interface UploadState {
   rows: MappedRow[];
@@ -21,13 +22,26 @@ const uploadSlice = createSlice({
   name: 'upload',
   initialState,
   reducers: {
-    // Seed the table from a freshly parsed statement.
-    loadParsedRows(state, action: PayloadAction<RawStatementRow[]>) {
-      state.rows = action.payload.map((r) => ({
-        ...r,
-        lineItemId: null,
-        paymentSourceId: null,
-      }));
+    // Seed the table from a freshly parsed statement. When the import is scoped
+    // to a period, `anchorDate` is that period's first day: rows whose date the
+    // parser couldn't read take it as a placeholder, so they land in roughly the
+    // right place and stay savable instead of blocking on a blank picker. They
+    // carry `dateAnchored` so the table can flag them for a look.
+    loadParsedRows(
+      state,
+      action: PayloadAction<{ rows: RawStatementRow[]; anchorDate?: string | null }>,
+    ) {
+      const anchor = action.payload.anchorDate ?? null;
+      state.rows = action.payload.rows.map((r) => {
+        const anchored = Boolean(anchor) && !isIsoDate(r.date);
+        return {
+          ...r,
+          date: anchored ? anchor! : r.date,
+          dateAnchored: anchored,
+          lineItemId: null,
+          paymentSourceId: null,
+        };
+      });
     },
     setRowLineItem(state, action: PayloadAction<{ rowId: string; lineItemId: number | null }>) {
       const row = state.rows.find((r) => r.rowId === action.payload.rowId);
@@ -48,7 +62,9 @@ const uploadSlice = createSlice({
     },
     setRowDate(state, action: PayloadAction<{ rowId: string; date: string }>) {
       const row = state.rows.find((r) => r.rowId === action.payload.rowId);
-      if (row) row.date = action.payload.date;
+      if (!row) return;
+      row.date = action.payload.date;
+      row.dateAnchored = false; // the user has confirmed it — stop flagging
     },
     // Apply a value to every row at once (quick "map all to X" affordance).
     setAllLineItems(state, action: PayloadAction<number>) {

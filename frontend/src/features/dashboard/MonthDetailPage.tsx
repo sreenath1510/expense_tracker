@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -12,13 +12,24 @@ import {
   useUpsertRemarkMutation,
 } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Breadcrumb } from '@/components/layout/Breadcrumb';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { IconButton, EditIcon, DeleteIcon } from '@/components/ui/IconButton';
+import {
+  IconButton,
+  EditIcon,
+  DeleteIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from '@/components/ui/IconButton';
 import { BarChart } from '@/components/charts/BarChart';
+import { DonutChart } from '@/components/charts/DonutChart';
+import { budgetColor, colorAt, seriesColors } from '@/components/charts/palette';
+import { useChartMode } from '@/components/charts/useChartMode';
+import { foldToSlices, getMonthBreakdown } from '@/utils/yearly';
 import { CountUp } from '@/components/ui/CountUp';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { openQuickAdd, setBlockOrder, pushToast } from '@/features/ui/uiSlice';
@@ -39,12 +50,25 @@ interface Group {
   subtotal: number;
 }
 
+/** A well-formed "YYYY-MM" for a real calendar month. */
+const MONTH_KEY = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+/** Step a "YYYY-MM" key by ±n months. */
+function shiftMonth(monthKey: string, delta: number): string {
+  const [y, m] = monthKey.split('-').map(Number);
+  const total = y * 12 + (m - 1) + delta;
+  return `${String(Math.floor(total / 12)).padStart(4, '0')}-${String(
+    (total % 12) + 1,
+  ).padStart(2, '0')}`;
+}
+
 export function MonthDetailPage() {
   const { monthKey = '' } = useParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const blockOrder = useAppSelector((s) => s.ui.blockOrder);
   const periodMode = useAppSelector((s) => s.ui.periodMode);
+  const chartMode = useChartMode();
 
   const { data: matrix, isLoading: matrixLoading } = useGetMatrixQuery();
   const { data: txns = [], isLoading: txnLoading } = useGetTransactionsByMonthQuery(monthKey);
@@ -65,11 +89,23 @@ export function MonthDetailPage() {
   const [remarkDraft, setRemarkDraft] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set()); // collapsed by default
   const [incomeExpanded, setIncomeExpanded] = useState(false);
+  // null = follow the default for this month (all blocks on an empty month,
+  // spend-only on a populated one); a boolean = the user's explicit choice.
+  const [showAllOverride, setShowAllOverride] = useState<boolean | null>(null);
   const [editing, setEditing] = useState<MonthTransaction | null>(null);
   const [addIncomeOpen, setAddIncomeOpen] = useState(false);
   const [budgetEditing, setBudgetEditing] = useState<{ id: number; name: string } | null>(null);
   const [dragId, setDragId] = useState<number | null>(null);
   const [confirm, setConfirm] = useState<{ message: string; action: () => void } | null>(null);
+
+  // The stepper swaps the route param without remounting, so per-month view
+  // state has to be cleared by hand — otherwise April's expanded blocks and
+  // block-visibility choice would carry over into May.
+  useEffect(() => {
+    setExpanded(new Set());
+    setIncomeExpanded(false);
+    setShowAllOverride(null);
+  }, [monthKey]);
 
   // Filter by free-text query and (optionally) a single payment source.
   const filtered = useMemo(() => {
@@ -86,6 +122,18 @@ export function MonthDetailPage() {
       );
     });
   }, [txns, query, sourceFilter]);
+
+  // A month with nothing booked yet — a freshly opened one, typically.
+  const monthIsEmpty = !txnLoading && txns.length === 0;
+  // Blocks with no spend are hidden on a populated month so the screen stays
+  // lean, and shown on an empty one so the whole month can be budgeted before
+  // the first transaction exists. Either default is overridable.
+  const showAllBlocks = showAllOverride ?? monthIsEmpty;
+  // Padding with empty blocks only makes sense in the accordion view, and only
+  // when nothing is filtering the table — an empty block can't match a search,
+  // and padding would drown out the "nothing matched" signal.
+  const padEmptyBlocks =
+    showAllBlocks && viewMode === 'detailed' && !query.trim() && !sourceFilter;
 
   // Group by block, then order by sort mode (or the persisted drag order).
   const groups = useMemo<Group[]>(() => {
@@ -104,6 +152,18 @@ export function MonthDetailPage() {
       g.rows.push(t);
       g.subtotal += t.amount;
     }
+    if (padEmptyBlocks) {
+      for (const b of matrix?.blocks ?? []) {
+        if (map.has(b.blockId)) continue;
+        map.set(b.blockId, {
+          blockId: b.blockId,
+          name: b.blockName,
+          type: b.blockType,
+          rows: [],
+          subtotal: 0,
+        });
+      }
+    }
     const arr = [...map.values()];
     if (sortMode === 'desc') {
       arr.sort((a, b) => b.subtotal - a.subtotal);
@@ -120,7 +180,7 @@ export function MonthDetailPage() {
       });
     }
     return arr;
-  }, [filtered, blockOrder, sortMode]);
+  }, [filtered, blockOrder, sortMode, padEmptyBlocks, matrix?.blocks]);
 
   // Roll each block's transactions up to one line per line item — 10 cab rows
   // become "Cab · ₹4,000". Built from `groups`, so it inherits the active
@@ -145,6 +205,14 @@ export function MonthDetailPage() {
   );
 
   const { label, year } = formatMonthKey(monthKey);
+  // Neighbouring months. No bounds: any real month opens, so stepping into a
+  // month with nothing in it is a feature — that's how a new month starts.
+  const prevKey = MONTH_KEY.test(monthKey) ? shiftMonth(monthKey, -1) : '';
+  const nextKey = MONTH_KEY.test(monthKey) ? shiftMonth(monthKey, 1) : '';
+  const stepLabel = (key: string) => {
+    const m = formatMonthKey(key);
+    return `${m.label} ${m.year}`;
+  };
   // Back-nav targets the month's parent period, which under fiscal mode is the
   // April-anchored year (e.g. Feb 2026 belongs to FY 2025), not the calendar year.
   const parentAnchor = monthKey ? periodAnchor(monthKey, periodMode) : Number(year);
@@ -178,7 +246,11 @@ export function MonthDetailPage() {
       ]
     : [];
 
-  const monthValid = matrixLoading || (matrix?.months.includes(monthKey) ?? false);
+  // Any real calendar month opens, whether or not it has data — that's how you
+  // start a new month: open it, set budgets, then book spend against them. The
+  // stat cards read 0 for a month the matrix has never heard of. Only a
+  // malformed key (a bad link, a typed URL) gets the dead end.
+  const monthValid = MONTH_KEY.test(monthKey);
   const loading = matrixLoading || txnLoading;
 
   // The matrix payload already carries every month's remark, so the month page
@@ -207,6 +279,16 @@ export function MonthDetailPage() {
   const blockBudget = (blockId: number) => effectiveBudget(budgets, blockId, monthKey);
   const blockActual = (blockId: number) =>
     matrix?.blocks.find((b) => b.blockId === blockId)?.subtotals[monthKey] ?? 0;
+
+  // Where this month's money went, by block. Reads the matrix rather than the
+  // filtered table, so it always agrees with the stat cards above it.
+  const donutSlices = matrix
+    ? foldToSlices(
+        getMonthBreakdown(matrix, monthKey),
+        (i) => colorAt(i, chartMode),
+        budgetColor(chartMode),
+      )
+    : [];
 
   // Budget vs Actual chart — blocks that have a budget set or any spend.
   const budgetChart = (matrix?.blocks ?? [])
@@ -251,6 +333,15 @@ export function MonthDetailPage() {
 
   return (
     <div>
+      {monthValid && (
+        <Breadcrumb
+          items={[
+            { label: 'Overview', to: '/' },
+            { label: parentLabel, to: `/year/${parentAnchor}` },
+            { label: `${label} ${year}` },
+          ]}
+        />
+      )}
       <PageHeader
         label="Month detail"
         title={
@@ -260,8 +351,24 @@ export function MonthDetailPage() {
         }
         actions={
           <>
-            <Button variant="secondary" onClick={() => navigate(`/year/${parentAnchor}`)}>
-              ← {parentLabel}
+            {monthValid && (
+              <div className={styles.stepper}>
+                <IconButton
+                  label={`Previous month — ${stepLabel(prevKey)}`}
+                  onClick={() => navigate(`/month/${prevKey}`)}
+                >
+                  <ChevronLeftIcon />
+                </IconButton>
+                <IconButton
+                  label={`Next month — ${stepLabel(nextKey)}`}
+                  onClick={() => navigate(`/month/${nextKey}`)}
+                >
+                  <ChevronRightIcon />
+                </IconButton>
+              </div>
+            )}
+            <Button variant="secondary" onClick={() => navigate(`/upload?period=${monthKey}`)}>
+              Import
             </Button>
             <Button variant="primary" onClick={() => dispatch(openQuickAdd(monthKey))}>
               + Quick Add
@@ -273,7 +380,7 @@ export function MonthDetailPage() {
       {!monthValid ? (
         <Card className={styles.empty}>
           <p>
-            No data for <strong>{monthKey || 'that month'}</strong>. Head back to the{' '}
+            <strong>{monthKey || 'That'}</strong> isn’t a month. Head back to the{' '}
             <Link to="/">dashboard</Link> and pick a month column.
           </p>
         </Card>
@@ -309,6 +416,32 @@ export function MonthDetailPage() {
               </motion.div>
             ))}
           </div>
+
+          {/* A month you've just opened. Say so, and offer the three ways in. */}
+          {monthIsEmpty && (
+            <Card className={styles.newMonth}>
+              <div>
+                <h3 className={styles.newMonthTitle}>
+                  Nothing recorded in {label} {year} yet
+                </h3>
+                <p className={styles.newMonthText}>
+                  Set each block’s budget below — every block is listed, spend or not —
+                  then add transactions as they happen.
+                </p>
+              </div>
+              <div className={styles.newMonthActions}>
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate(`/upload?period=${monthKey}`)}
+                >
+                  Import a statement
+                </Button>
+                <Button variant="primary" onClick={() => dispatch(openQuickAdd(monthKey))}>
+                  + Add a transaction
+                </Button>
+              </div>
+            </Card>
+          )}
 
           {/* Free-text note for the month — the year matrix's Remarks row */}
           <Card className={styles.remarkCard}>
@@ -351,18 +484,31 @@ export function MonthDetailPage() {
             )}
           </Card>
 
-          {/* Budget vs Actual for the month */}
-          {budgetChart.length > 0 && (
-            <Card className={styles.budgetChartCard}>
-              <h3 className={styles.budgetChartTitle}>Budget vs Actual</h3>
-              <BarChart
-                groups={budgetChart.map((b) => ({ label: b.label, values: [b.budget, b.actual] }))}
-                series={[
-                  { label: 'Budget', color: '#94a3b8' },
-                  { label: 'Actual', color: '#0052ff' },
-                ]}
-              />
-            </Card>
+          {/* Where it went + Budget vs Actual, side by side on wide screens */}
+          {(donutSlices.length > 0 || budgetChart.length > 0) && (
+            <div className={styles.chartRow}>
+              {donutSlices.length > 0 && (
+                <Card className={styles.chartCard}>
+                  <h3 className={styles.chartTitle}>Where it went</h3>
+                  <DonutChart data={donutSlices} centerLabel="Outflow" />
+                </Card>
+              )}
+              {budgetChart.length > 0 && (
+                <Card className={styles.chartCard}>
+                  <h3 className={styles.chartTitle}>Budget vs Actual</h3>
+                  <BarChart
+                    groups={budgetChart.map((b) => ({
+                      label: b.label,
+                      values: [b.budget, b.actual],
+                    }))}
+                    series={[
+                      { label: 'Budget', color: budgetColor(chartMode) },
+                      { label: 'Actual', color: seriesColors(chartMode).expenditure },
+                    ]}
+                  />
+                </Card>
+              )}
+            </div>
           )}
 
           {/* search · filter · sort · count/source · total — one row */}
@@ -417,6 +563,23 @@ export function MonthDetailPage() {
                 </button>
               ))}
             </div>
+            {viewMode === 'detailed' && (
+              <button
+                type="button"
+                aria-pressed={showAllBlocks}
+                className={`${styles.blocksToggle} ${
+                  showAllBlocks ? styles.blocksToggleOn : ''
+                }`}
+                title={
+                  showAllBlocks
+                    ? 'Showing every block, including those with no spend this month'
+                    : 'Show every block — including ones with no spend — to set their budgets'
+                }
+                onClick={() => setShowAllOverride(!showAllBlocks)}
+              >
+                All blocks
+              </button>
+            )}
             <span className={styles.summaryMeta}>
               {filtered.length} txns{sourceName && ` · ${sourceName}`}
             </span>
@@ -551,6 +714,7 @@ export function MonthDetailPage() {
           ) : (
             groups.map((group) => {
               const isOpen = expanded.has(group.blockId);
+              const isEmpty = group.rows.length === 0;
               const budget = blockBudget(group.blockId);
               const actual = blockActual(group.blockId);
               const ratio = budget && budget > 0 ? actual / budget : 0;
@@ -565,7 +729,10 @@ export function MonthDetailPage() {
                   onDrop={() => handleDrop(group.blockId)}
                   className={`${styles.groupWrap} ${dragId === group.blockId ? styles.dragging : ''}`}
                 >
-                  <Card padded={false} className={styles.groupCard}>
+                  <Card
+                    padded={false}
+                    className={`${styles.groupCard} ${isEmpty ? styles.emptyGroup : ''}`}
+                  >
                     <div className={styles.groupHeader}>
                       <button
                         className={styles.groupToggle}
@@ -586,7 +753,9 @@ export function MonthDetailPage() {
                           }`}
                         />
                         {group.name}
-                        <span className={styles.countPill}>{group.rows.length}</span>
+                        {!isEmpty && (
+                          <span className={styles.countPill}>{group.rows.length}</span>
+                        )}
                       </button>
                       <div className={styles.groupHeaderRight}>
                         <button
@@ -597,13 +766,19 @@ export function MonthDetailPage() {
                           {budget != null ? `of ₹${formatAmount(budget)}` : '+ budget'}
                         </button>
                         <span className={styles.groupSubtotal}>₹{formatAmount(group.subtotal)}</span>
-                        <IconButton
-                          label={`Delete all ${group.name} transactions`}
-                          variant="danger"
-                          onClick={() => handleDeleteGroup(group)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                        {/* Nothing to delete on a block with no spend — but the
+                            gap keeps its header aligned with the others. */}
+                        {isEmpty ? (
+                          <span className={styles.actionSpacer} aria-hidden="true" />
+                        ) : (
+                          <IconButton
+                            label={`Delete all ${group.name} transactions`}
+                            variant="danger"
+                            onClick={() => handleDeleteGroup(group)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
                       </div>
                     </div>
 
@@ -616,7 +791,13 @@ export function MonthDetailPage() {
                       </div>
                     )}
 
-                    {isOpen && (
+                    {isOpen && isEmpty && (
+                      <p className={styles.groupEmpty}>
+                        Nothing booked to {group.name} in {label} {year}.
+                      </p>
+                    )}
+
+                    {isOpen && !isEmpty && (
                       <table className={styles.table}>
                         <tbody>
                           {group.rows.map((t) => (

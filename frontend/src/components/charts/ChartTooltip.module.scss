@@ -1,0 +1,79 @@
+@use "../../styles/abstracts/index" as *;
+
+.tip {
+  min-width: 9rem;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: $shadow-lg;
+  pointer-events: none;
+}
+
+.title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: $space-2;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 0.75rem 1fr auto;
+  align-items: center;
+  gap: $space-2;
+  white-space: nowrap;
+}
+
+.rowMuted {
+  padding-top: 0.2rem;
+  margin-top: 0.1rem;
+  border-top: 1px solid var(--border);
+
+  .label,
+  .value {
+    color: var(--muted-foreground);
+  }
+}
+
+// Line key for line/area series — a stroke, matching the mark it stands for.
+.keyLine {
+  height: 2px;
+  border-radius: $radius-full;
+}
+
+// Swatch for bars and filled areas.
+.keySwatch {
+  height: 0.55rem;
+  width: 0.55rem;
+  border-radius: 2px;
+  justify-self: center;
+}
+
+// Text wears text tokens, never the series color — identity comes from the
+// colored key beside it.
+.label {
+  font-size: $text-xs;
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// The value is the strong element: it's what the reader came for.
+.value {
+  font-family: var(--font-mono);
+  font-size: $text-xs;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}

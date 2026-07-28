@@ -58,6 +58,50 @@
   &.invest { color: var(--investment); }
 }
 
+// Prev/next month arrows, grouped so they read as one control.
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.125rem;
+  border: 1px solid var(--border);
+  border-radius: $radius-md;
+  background: var(--muted);
+}
+
+// --- New-month landing ------------------------------------------------------
+.newMonth {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  margin-bottom: $space-5;
+  padding: $space-4 $space-5;
+  border-left: 3px solid var(--accent);
+}
+
+.newMonthTitle {
+  font-size: $text-base;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.newMonthText {
+  margin-top: $space-1;
+  font-size: $text-sm;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  max-width: 44rem;
+}
+
+.newMonthActions {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-wrap: wrap;
+}
+
 // --- Remarks ----------------------------------------------------------------
 .remarkCard {
   margin-bottom: $space-5;
@@ -193,6 +237,36 @@
   background: var(--card);
   color: var(--accent);
   box-shadow: $shadow-sm;
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+// Reveals the blocks with no spend this month, so they can still be budgeted.
+.blocksToggle {
+  padding: $space-1 $space-3;
+  border-radius: $radius-md;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  font-size: $text-xs;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  transition: color $duration-fast $ease-out, background $duration-fast $ease-out,
+    border-color $duration-fast $ease-out;
+
+  &:hover {
+    color: var(--foreground);
+  }
+
+  @include focus-ring;
+}
+
+.blocksToggleOn {
+  background: rgba($color-accent, 0.1);
+  border-color: rgba($color-accent, 0.35);
+  color: var(--accent);
 
   &:hover {
     color: var(--accent);
@@ -336,6 +410,29 @@
   margin-bottom: $space-3;
 }
 
+// A block with no spend this month: present so it can be budgeted, but visually
+// recessive so it never competes with the blocks that actually have activity.
+.emptyGroup {
+  .groupToggle,
+  .groupSubtotal {
+    color: var(--muted-foreground);
+  }
+}
+
+// Stands in for the delete button an empty block doesn't get, so its budget
+// chip and subtotal stay on the same vertical line as every other block's.
+.actionSpacer {
+  width: 2.25rem;
+  flex-shrink: 0;
+}
+
+.groupEmpty {
+  padding: $space-3 $space-4;
+  border-top: 1px solid var(--border);
+  font-size: $text-sm;
+  color: var(--muted-foreground);
+}
+
 .groupHeader {
   display: flex;
   align-items: center;
@@ -427,12 +524,27 @@
   &.over { background: var(--negative); }
 }
 
-// --- Budget vs Actual chart -------------------------------------------------
-.budgetChartCard {
+// --- Month charts -----------------------------------------------------------
+// The donut needs less width than the grouped bars, so it takes the narrower
+// column once there's room for two.
+.chartRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-4;
   margin-bottom: $space-5;
+
+  @include lg {
+    grid-template-columns: 1fr 1.35fr;
+  }
 }
 
-.budgetChartTitle {
+.chartCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; // let the grid column shrink instead of overflowing
+}
+
+.chartTitle {
   font-size: $text-base;
   font-weight: 600;
   color: var(--foreground);

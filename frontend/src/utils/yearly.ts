@@ -37,10 +37,21 @@ export interface MonthlySeries {
 }
 
 export interface BlockSlice {
+  blockId: number;
   label: string;
   value: number;
   type: 'EXPENSE' | 'INVESTMENT';
+  /**
+   * Palette slot, taken from the block's position in the matrix — NOT from its
+   * rank in this particular breakdown. A block that's the biggest one month and
+   * the fourth-biggest the next keeps the same color, so "Mandatory is blue"
+   * stays true across the month view, the year view and every period.
+   */
+  colorIndex: number;
 }
+
+/** The categorical palette has eight slots; past that, hues would repeat. */
+export const MAX_SLICES = 8;
 
 const monthLabel = (key: string) =>
   new Date(`${key}-01T00:00:00`).toLocaleString('en-US', { month: 'short' });
@@ -113,13 +124,52 @@ export function getBlockBreakdown(
 ): BlockSlice[] {
   const months = getPeriodMonths(matrix, anchor, mode);
   return matrix.blocks
-    .map((b) => ({
+    .map((b, i) => ({
+      blockId: b.blockId,
       label: b.blockName,
       value: sum(b.subtotals, months),
       type: b.blockType,
+      colorIndex: i,
     }))
     .filter((s) => s.value > 0)
     .sort((a, b) => b.value - a.value);
+}
+
+/** Per-block totals for a single month (drives the month view's donut). */
+export function getMonthBreakdown(matrix: MatrixResponse, monthKey: string): BlockSlice[] {
+  return matrix.blocks
+    .map((b, i) => ({
+      blockId: b.blockId,
+      label: b.blockName,
+      value: b.subtotals[monthKey] ?? 0,
+      type: b.blockType,
+      colorIndex: i,
+    }))
+    .filter((s) => s.value > 0)
+    .sort((a, b) => b.value - a.value);
+}
+
+/**
+ * Turn block slices into donut data, folding everything past the palette's
+ * eight slots into a single neutral "Other" rather than repeating a hue. Blocks
+ * are ordered by the user's own sort order, so which blocks get their own slice
+ * is stable — it doesn't shuffle as amounts move around.
+ */
+export function foldToSlices(
+  slices: BlockSlice[],
+  colorFor: (index: number) => string,
+  otherColor: string,
+): { label: string; value: number; color: string }[] {
+  const kept = slices.filter((s) => s.colorIndex < MAX_SLICES);
+  const tail = slices.filter((s) => s.colorIndex >= MAX_SLICES);
+  const out = kept.map((s) => ({
+    label: s.label,
+    value: s.value,
+    color: colorFor(s.colorIndex),
+  }));
+  const tailTotal = tail.reduce((acc, s) => acc + s.value, 0);
+  if (tailTotal > 0) out.push({ label: 'Other', value: tailTotal, color: otherColor });
+  return out;
 }
 
 /**

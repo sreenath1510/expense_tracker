@@ -222,9 +222,11 @@ export const api = createApi({
       query: () => '/budgets',
       providesTags: ['Budget'],
     }),
+    // Matrix too: a budget month joins the matrix's month set, so budgeting a
+    // month ahead of spending it adds that column.
     upsertBudget: build.mutation<Budget, { blockId: number; year: number; month: number; amount: number }>({
       query: (body) => ({ url: '/budgets', method: 'PUT', body }),
-      invalidatesTags: ['Budget'],
+      invalidatesTags: ['Budget', 'Matrix'],
     }),
 
     // --- Bulk upload parse (backend returns raw, uncategorized rows) ---
