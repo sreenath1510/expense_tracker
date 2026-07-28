@@ -1,0 +1,81 @@
+@use "../../styles/abstracts/index" as *;
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-1 $space-3;
+  margin-bottom: $space-3;
+  list-style: none;
+}
+
+.alignEnd {
+  justify-content: flex-end;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: 0.2rem $space-2;
+  border-radius: $radius-sm;
+  font-size: $text-xs;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: opacity $duration-fast $ease-out, background $duration-fast $ease-out,
+    color $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  @include focus-ring;
+}
+
+// Switched off: the key drains to a hollow outline so "off" reads without
+// relying on opacity alone.
+.off {
+  color: var(--muted-foreground);
+  opacity: 0.5;
+
+  .keyRect,
+  .keyLine {
+    background: transparent !important;
+    box-shadow: inset 0 0 0 1.5px var(--muted-foreground);
+  }
+}
+
+// Another mark is hovered — recede, don't disappear.
+.dimmed {
+  opacity: 0.45;
+}
+
+.keyRect {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.keyLine {
+  width: 0.9rem;
+  height: 2px;
+  border-radius: $radius-full;
+  flex-shrink: 0;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+// Pushed to the trailing edge so stacked entries read as aligned columns.
+.meta {
+  margin-left: auto;
+  padding-left: $space-3;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}

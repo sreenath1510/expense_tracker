@@ -24,7 +24,10 @@ $color-ring:              #0052ff; // Focus rings
 // Semantic finance colors (additions, harmonized with the accent system)
 $color-positive:          #0f9d58; // Balance / savings positive
 $color-negative:          #e5484d; // Overspend / negative balance
-$color-investment:        #7c5cff; // Distinguishes investment blocks from expense
+// Re-stepped from #7c5cff: against the accent blue it measured ΔE 3.0 under
+// protanopia (12.6 for normal vision), which made investment lines and slices
+// genuinely hard to separate from expenditure. Same hue family, darker step.
+$color-investment:        #7c3aed; // Distinguishes investment blocks from expense
 
 // The signature gradient (theme.md)
 $gradient-accent:         linear-gradient(135deg, #{$color-accent}, #{$color-accent-secondary});

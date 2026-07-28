@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { BarChart } from '@/components/charts/BarChart';
 import { Sparkline } from '@/components/charts/Sparkline';
+import { seriesColors } from '@/components/charts/palette';
+import { useChartMode } from '@/components/charts/useChartMode';
 import { CountUp } from '@/components/ui/CountUp';
 import { PeriodModeToggle } from '@/components/ui/PeriodModeToggle';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -20,6 +22,7 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const token = useAppSelector((s) => s.auth.token);
   const periodMode = useAppSelector((s) => s.ui.periodMode);
+  const tone = seriesColors(useChartMode());
   const { data, isLoading, isError } = useGetMatrixQuery();
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -149,7 +152,7 @@ export function DashboardPage() {
               </span>
             </div>
 
-            <Sparkline values={y.monthlyBalance} color="#0052ff" />
+            <Sparkline values={y.monthlyBalance} color={tone.expenditure} />
 
             <div className={styles.yearStats}>
               <div className={styles.stat}>
@@ -190,9 +193,9 @@ export function DashboardPage() {
             .reverse()
             .map((y) => ({ label: y.label, values: [y.income, y.expenditure, y.investments] }))}
           series={[
-            { label: 'Income', color: '#0f9d58' },
-            { label: 'Expenditure', color: '#0052ff' },
-            { label: 'Investments', color: '#7c5cff' },
+            { label: 'Income', color: tone.income },
+            { label: 'Expenditure', color: tone.expenditure },
+            { label: 'Investments', color: tone.investment },
           ]}
         />
       </Card>

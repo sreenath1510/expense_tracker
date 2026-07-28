@@ -1,11 +1,14 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import type { MatrixResponse } from '@/types';
+import type { Budget, MatrixResponse } from '@/types';
 import { formatAmount, formatMonthKey } from '@/utils/format';
+import { effectiveBudget } from '@/utils/budgets';
 import styles from './MatrixTable.module.scss';
 
 interface MatrixTableProps {
   data: MatrixResponse;
+  /** Drives the per-block budget coloring. Omit for an uncolored matrix. */
+  budgets?: Budget[];
 }
 
 const fadeUp = {
@@ -25,9 +28,22 @@ const fadeUp = {
  *   - A Remarks row at the very bottom
  * The first column is sticky so the wide month columns can scroll horizontally.
  */
-export function MatrixTable({ data }: MatrixTableProps) {
+export function MatrixTable({ data, budgets = [] }: MatrixTableProps) {
   const { months, blocks, summary, remarks } = data;
   const navigate = useNavigate();
+
+  /**
+   * How a block's month sits against its budget. Deliberately four states, not
+   * three: a month with no spend reads as neutral rather than green, because
+   * colouring an empty cell "under budget" would paint a wall of green across
+   * every future month you've budgeted but not yet spent.
+   */
+  const budgetState = (blockId: number, monthKey: string, actual: number) => {
+    if (!budgets.length || actual === 0) return null;
+    const budget = effectiveBudget(budgets, blockId, monthKey);
+    if (budget == null || budget <= 0) return null;
+    return { over: actual > budget, budget, ratio: actual / budget };
+  };
 
   // Summary rows config — drives both rendering and the semantic coloring.
   const summaryRows: {
@@ -100,9 +116,36 @@ export function MatrixTable({ data }: MatrixTableProps) {
                 />
                 {block.blockName}
               </td>
-              {months.map((m) => (
-                <td key={m} className={styles.blockSpacerCell} />
-              ))}
+              {months.map((m) => {
+                const actual = block.subtotals[m] ?? 0;
+                const state = budgetState(block.blockId, m, actual);
+                const { label, year } = formatMonthKey(m);
+                return (
+                  <td
+                    key={m}
+                    className={`${styles.blockSpacerCell} ${
+                      state ? (state.over ? styles.overBudget : styles.underBudget) : ''
+                    }`}
+                    title={
+                      state
+                        ? `${block.blockName} · ${label} ${year} — ₹${formatAmount(
+                            actual,
+                          )} of ₹${formatAmount(state.budget)} budget (${Math.round(
+                            state.ratio * 100,
+                          )}%)`
+                        : undefined
+                    }
+                  >
+                    {formatAmount(actual)}
+                    {/* Colour never carries the meaning on its own. */}
+                    {state?.over && (
+                      <span className={styles.overMark} aria-label="over budget">
+                        ▲
+                      </span>
+                    )}
+                  </td>
+                );
+              })}
             </tr>
 
             {/* Line item rows */}

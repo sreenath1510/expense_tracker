@@ -2,12 +2,15 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGetMatrixQuery, useGetBudgetsQuery } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Breadcrumb } from '@/components/layout/Breadcrumb';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { TrendChart } from '@/components/charts/TrendChart';
 import { DonutChart } from '@/components/charts/DonutChart';
 import { BarChart } from '@/components/charts/BarChart';
 import { CountUp } from '@/components/ui/CountUp';
+import { budgetColor, colorAt, seriesColors } from '@/components/charts/palette';
+import { useChartMode } from '@/components/charts/useChartMode';
 import { MatrixTable } from './MatrixTable';
 import { PeriodModeToggle } from '@/components/ui/PeriodModeToggle';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -16,6 +19,7 @@ import {
   getPeriodSummaries,
   getMonthlySeries,
   getBlockBreakdown,
+  foldToSlices,
   sliceMatrixByPeriod,
 } from '@/utils/yearly';
 import { periodAnchor, periodLabel, periodRange } from '@/utils/period';
@@ -28,6 +32,8 @@ export function YearDetailPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const mode = useAppSelector((s) => s.ui.periodMode);
+  const chartMode = useChartMode();
+  const tone = seriesColors(chartMode);
   const { data, isLoading } = useGetMatrixQuery();
   const { data: budgets = [] } = useGetBudgetsQuery();
 
@@ -74,6 +80,7 @@ export function YearDetailPage() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: 'Overview', to: '/' }, { label }]} />
       <PageHeader
         label={mode === 'fiscal' ? `Financial year · ${periodRange(anchor, mode)}` : 'Year detail'}
         title={
@@ -85,8 +92,8 @@ export function YearDetailPage() {
         actions={
           <>
             <PeriodModeToggle />
-            <Button variant="secondary" onClick={() => navigate('/')}>
-              ← Overview
+            <Button variant="secondary" onClick={() => navigate(`/upload?period=${anchor}`)}>
+              Import
             </Button>
             <Button variant="primary" onClick={() => dispatch(openQuickAdd())}>
               + Quick Add
@@ -119,16 +126,16 @@ export function YearDetailPage() {
           <TrendChart
             labels={series.labels}
             series={[
-              { label: 'Income', color: '#0f9d58', values: series.income, area: true },
-              { label: 'Expenditure', color: '#0052ff', values: series.expenditure },
-              { label: 'Investments', color: '#7c5cff', values: series.investments },
+              { label: 'Income', color: tone.income, values: series.income, area: true },
+              { label: 'Expenditure', color: tone.expenditure, values: series.expenditure },
+              { label: 'Investments', color: tone.investment, values: series.investments },
             ]}
           />
         </Card>
         <Card className={styles.donutCard}>
           <h3 className={styles.chartTitle}>Where it went</h3>
           <DonutChart
-            data={breakdown.map((b) => ({ label: b.label, value: b.value }))}
+            data={foldToSlices(breakdown, (i) => colorAt(i, chartMode), budgetColor(chartMode))}
             centerLabel="Outflow"
           />
         </Card>
@@ -140,15 +147,30 @@ export function YearDetailPage() {
           <BarChart
             groups={budgetChart.map((b) => ({ label: b.label, values: [b.budget, b.actual] }))}
             series={[
-              { label: 'Budget', color: '#94a3b8' },
-              { label: 'Actual', color: '#0052ff' },
+              { label: 'Budget', color: budgetColor(chartMode) },
+              { label: 'Actual', color: tone.expenditure },
             ]}
           />
         </Card>
       )}
 
-      <h3 className={styles.matrixTitle}>Month-by-month breakdown</h3>
-      <MatrixTable data={yearMatrix} />
+      <div className={styles.matrixHead}>
+        <h3 className={styles.matrixTitle}>Month-by-month breakdown</h3>
+        {budgets.length > 0 && (
+          <div className={styles.budgetKey}>
+            <span className={styles.keyItem}>
+              <span className={`${styles.keySwatch} ${styles.keyUnder}`} />
+              Within budget
+            </span>
+            <span className={styles.keyItem}>
+              <span className={`${styles.keySwatch} ${styles.keyOver}`} />
+              Over budget ▲
+            </span>
+            <span className={styles.keyNote}>Block totals only · no budget set = plain</span>
+          </div>
+        )}
+      </div>
+      <MatrixTable data={yearMatrix} budgets={budgets} />
     </div>
   );
 }

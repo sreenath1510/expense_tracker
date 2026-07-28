@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.models import (
     Block,
+    Budget,
     IncomeEntry,
     LineItem,
     MonthlyRemark,
@@ -71,8 +72,10 @@ def _last_n_months(n: int) -> list[str]:
 
 def build_matrix(db: Session, user_id: int) -> MatrixResponse:
     # --- 1. Determine the month columns ------------------------------------
-    # Take every month that appears in any of this user's data sources. Fall
-    # back to the last four months when there's no data yet.
+    # Take every month that appears in any of this user's data sources —
+    # including months that only have a budget, so planning next month ahead of
+    # spending it makes that month a real column. Fall back to the last four
+    # months when there's no data yet.
     txn_months = [
         _ym(y, m)
         for y, m in db.execute(
@@ -95,9 +98,18 @@ def build_matrix(db: Session, user_id: int) -> MatrixResponse:
         )
     ).all()
     remark_month_keys = [f"{y:04d}-{m:02d}" for y, m in remark_months]
+    budget_months = db.execute(
+        select(Budget.year, Budget.month)
+        .where(Budget.user_id == user_id)
+        .distinct()
+    ).all()
+    budget_month_keys = [f"{y:04d}-{m:02d}" for y, m in budget_months]
 
     months = sorted(
-        set(txn_months) | set(income_months) | set(remark_month_keys)
+        set(txn_months)
+        | set(income_months)
+        | set(remark_month_keys)
+        | set(budget_month_keys)
     )
     if not months:
         months = _last_n_months(4)

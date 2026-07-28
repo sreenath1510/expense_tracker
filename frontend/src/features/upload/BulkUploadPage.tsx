@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -26,12 +27,62 @@ import {
 } from '@/api/client';
 import { parseStatementFile } from './parseStatement';
 import { isIsoDate } from './statementDate';
-import { formatLedgerDate } from '@/utils/format';
+import { formatLedgerDate, formatMonthKey } from '@/utils/format';
+import { periodMonths, periodLabel, periodRange } from '@/utils/period';
 import styles from './BulkUploadPage.module.scss';
+
+/** The period an import is scoped to, resolved from the `period` query param. */
+interface ImportTarget {
+  /** Every month key the import is expected to land in. */
+  months: string[];
+  /** "April 2026" or "FY 2025". */
+  label: string;
+  /** "Apr 2025 – Mar 2026" for a 12-month period; null for a single month. */
+  range: string | null;
+  /** First day of the target — the placeholder for unreadable dates. */
+  anchorDate: string;
+}
 
 export function BulkUploadPage() {
   const dispatch = useAppDispatch();
   const rows = useAppSelector((s) => s.upload.rows);
+  const periodMode = useAppSelector((s) => s.ui.periodMode);
+  const [searchParams] = useSearchParams();
+
+  // ?period=2026-04 imports into one month; ?period=2025 into a whole period,
+  // read under the active calendar/fiscal mode. Anything else — or no param —
+  // is an unscoped import, exactly as before.
+  const periodParam = searchParams.get('period');
+  const target = useMemo<ImportTarget | null>(() => {
+    if (!periodParam) return null;
+    if (/^\d{4}-(0[1-9]|1[0-2])$/.test(periodParam)) {
+      const { label, year } = formatMonthKey(periodParam);
+      return {
+        months: [periodParam],
+        label: `${label} ${year}`,
+        range: null,
+        anchorDate: `${periodParam}-01`,
+      };
+    }
+    if (/^\d{4}$/.test(periodParam)) {
+      const anchor = Number(periodParam);
+      const months = periodMonths(anchor, periodMode);
+      return {
+        months,
+        label: periodLabel(anchor, periodMode),
+        range: periodRange(anchor, periodMode),
+        anchorDate: `${months[0]}-01`,
+      };
+    }
+    return null;
+  }, [periodParam, periodMode]);
+
+  const targetMonths = useMemo(() => new Set(target?.months ?? []), [target]);
+  // A readable date outside the target window. Statements routinely straddle a
+  // boundary, so this flags rather than blocks — the row still saves, into its
+  // own month.
+  const isOutsideTarget = (r: (typeof rows)[number]) =>
+    target !== null && isIsoDate(r.date) && !targetMonths.has(r.date.slice(0, 7));
 
   const { data: blocks = [] } = useGetBlocksQuery();
   const { data: lineItems = [] } = useGetLineItemsQuery();
@@ -79,7 +130,7 @@ export function BulkUploadPage() {
         );
         return;
       }
-      dispatch(loadParsedRows(parsed));
+      dispatch(loadParsedRows({ rows: parsed, anchorDate: target?.anchorDate ?? null }));
       setFileName(file.name);
     } catch (err) {
       setParseError(err instanceof Error ? err.message : 'Could not parse the file.');
@@ -96,6 +147,8 @@ export function BulkUploadPage() {
 
   const mappedCount = rows.filter((r) => r.lineItemId && r.paymentSourceId).length;
   const badDateCount = rows.filter((r) => !isIsoDate(r.date)).length;
+  const anchoredCount = rows.filter((r) => r.dateAnchored).length;
+  const outsideCount = rows.filter(isOutsideTarget).length;
   const savableCount = rows.filter(isSavable).length;
   const allMapped = rows.length > 0 && mappedCount === rows.length;
 
@@ -164,6 +217,22 @@ export function BulkUploadPage() {
           ) : undefined
         }
       />
+
+      {/* Launched from a month or year screen — say where this is landing. */}
+      {target && (
+        <Card className={styles.targetBanner}>
+          <span className={styles.targetDot} aria-hidden="true" />
+          <div className={styles.targetText}>
+            <strong>Importing into {target.label}</strong>
+            {target.range && <span className={styles.targetRange}> · {target.range}</span>}
+            <p className={styles.targetHint}>
+              Rows dated outside {target.label} are flagged but still saved to their own
+              month — statements rarely stop at a period boundary. Dates the parser
+              couldn’t read start at {formatLedgerDate(target.anchorDate)}; check those.
+            </p>
+          </div>
+        </Card>
+      )}
 
       {rows.length === 0 ? (
         <Card className={styles.dropCard}>
@@ -315,12 +384,16 @@ export function BulkUploadPage() {
                   {rows.map((row) => {
                     const isMapped = row.lineItemId && row.paymentSourceId;
                     const isSelected = selected.has(row.rowId);
+                    const outside = isOutsideTarget(row);
+                    // Anchored dates are placeholders, so they stay editable
+                    // even though they're technically valid ISO.
+                    const needsDate = !isIsoDate(row.date) || row.dateAnchored;
                     return (
                       <tr
                         key={row.rowId}
                         className={`${isMapped ? styles.mappedRow : ''} ${
                           isSelected ? styles.selectedRow : ''
-                        }`}
+                        } ${outside ? styles.outsideRow : ''}`}
                       >
                         <td className={styles.center}>
                           <input
@@ -332,17 +405,36 @@ export function BulkUploadPage() {
                           />
                         </td>
                         <td className={styles.dateCell}>
-                          {isIsoDate(row.date) ? (
-                            formatLedgerDate(row.date)
+                          {!needsDate ? (
+                            <>
+                              {formatLedgerDate(row.date)}
+                              {outside && (
+                                <span
+                                  className={styles.outsideFlag}
+                                  title={`Dated outside ${target?.label} — it'll still be saved, to its own month.`}
+                                >
+                                  outside
+                                </span>
+                              )}
+                            </>
                           ) : (
                             // Couldn't read the statement's date — let the user
-                            // set it here rather than fail the whole batch.
+                            // set it here rather than fail the whole batch. When
+                            // the import is period-scoped it's pre-filled with
+                            // the target's first day, so the row is savable and
+                            // the picker opens in the right month.
                             <input
-                              className={`${styles.cellInput} ${styles.dateInput}`}
+                              className={`${styles.cellInput} ${styles.dateInput} ${
+                                row.dateAnchored ? styles.dateAnchored : ''
+                              }`}
                               type="date"
                               aria-label={`Date for ${row.description}`}
-                              title={`Couldn't read "${row.date}" — pick the date`}
-                              value=""
+                              title={
+                                row.dateAnchored
+                                  ? `Couldn't read this row's date — anchored to ${target?.label}. Set the real one.`
+                                  : `Couldn't read "${row.date}" — pick the date`
+                              }
+                              value={isIsoDate(row.date) ? row.date : ''}
                               onChange={(e) =>
                                 dispatch(
                                   setRowDate({ rowId: row.rowId, date: e.target.value }),
@@ -450,6 +542,10 @@ export function BulkUploadPage() {
               <span className={styles.saveHint}>
                 {badDateCount > 0
                   ? `${badDateCount} row(s) have an unreadable date — set it in the Date column. They stay on the table.`
+                  : anchoredCount > 0
+                  ? `${anchoredCount} row(s) had no readable date and start at ${target?.label} — check the Date column before saving.`
+                  : outsideCount > 0
+                  ? `${outsideCount} row(s) fall outside ${target?.label}. They'll be saved to their own month.`
                   : allMapped
                   ? 'All rows mapped — ready to save.'
                   : `Save as you go — categorized rows are banked, the other ${rows.length - mappedCount} stay on the table.`}

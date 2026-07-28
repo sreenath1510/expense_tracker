@@ -1,0 +1,7 @@
+.layer {
+  position: absolute;
+  z-index: 20;
+  transform: translateX(-50%);
+  pointer-events: none;
+  will-change: left, top;
+}

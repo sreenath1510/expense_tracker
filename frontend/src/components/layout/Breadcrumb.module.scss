@@ -1,0 +1,45 @@
+@use "../../styles/abstracts/index" as *;
+
+.nav {
+  margin-bottom: $space-2;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-1;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $text-xs;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.link {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  border-radius: $radius-sm;
+  transition: color $duration-fast $ease-out;
+
+  &:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  @include focus-ring;
+}
+
+.current {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.separator {
+  color: var(--border);
+}

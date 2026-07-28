@@ -21,6 +21,18 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split the charting stack into its own chunk. It changes far less
+        // often than app code, so it stays cached across deploys — and it keeps
+        // its weight visible in the build output instead of buried in the app
+        // bundle.
+        manualChunks: (id) =>
+          /node_modules[\\/](d3-|internmap)/.test(id) ? 'charts' : undefined,
+      },
+    },
+  },
   server: {
     port: 5173,
     // During local dev, proxy API calls to the FastAPI backend so the
