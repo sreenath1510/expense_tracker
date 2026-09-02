@@ -49,6 +49,31 @@ interface Group {
   subtotal: number;
 }
 
+type SortMode = 'custom' | 'desc' | 'asc' | 'dateDesc' | 'dateAsc';
+type ViewMode = 'detailed' | 'summary' | 'table';
+
+/**
+ * The date a block sorts on: its newest transaction when the newest come
+ * first, its oldest otherwise. A block with no spend has no date at all —
+ * null, which the comparator parks at the bottom in either direction.
+ */
+function groupDateKey(group: Group, newestFirst: boolean): string | null {
+  if (group.rows.length === 0) return null;
+  return group.rows.reduce(
+    (best, r) =>
+      newestFirst ? (r.txnDate > best ? r.txnDate : best) : r.txnDate < best ? r.txnDate : best,
+    group.rows[0].txnDate,
+  );
+}
+
+/** Order two blocks by date, dateless (empty) blocks last either way. */
+function compareGroupDates(a: Group, b: Group, newestFirst: boolean): number {
+  const ka = groupDateKey(a, newestFirst);
+  const kb = groupDateKey(b, newestFirst);
+  if (ka === null || kb === null) return ka === kb ? 0 : ka === null ? 1 : -1;
+  return newestFirst ? kb.localeCompare(ka) : ka.localeCompare(kb);
+}
+
 /** A well-formed "YYYY-MM" for a real calendar month. */
 const MONTH_KEY = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -80,10 +105,11 @@ export function MonthDetailPage() {
 
   const [query, setQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState(''); // '' = all payment sources
-  const [sortMode, setSortMode] = useState<'custom' | 'desc' | 'asc'>('custom');
+  const [sortMode, setSortMode] = useState<SortMode>('custom');
   // 'detailed' = the per-transaction accordion; 'summary' = read-only roll-up
-  // of each block's line items, this month's column of the year matrix.
-  const [viewMode, setViewMode] = useState<'detailed' | 'summary'>('detailed');
+  // of each block's line items, this month's column of the year matrix;
+  // 'table' = every transaction as one flat, ungrouped ledger.
+  const [viewMode, setViewMode] = useState<ViewMode>('detailed');
   // null = not editing; a string = the in-progress remark draft.
   const [remarkDraft, setRemarkDraft] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set()); // collapsed by default
@@ -168,6 +194,16 @@ export function MonthDetailPage() {
       arr.sort((a, b) => b.subtotal - a.subtotal);
     } else if (sortMode === 'asc') {
       arr.sort((a, b) => a.subtotal - b.subtotal);
+    } else if (sortMode === 'dateDesc' || sortMode === 'dateAsc') {
+      // Date sorts run on the transactions themselves: rows inside a block go
+      // in date order, and the blocks then follow their own extreme date.
+      const newestFirst = sortMode === 'dateDesc';
+      for (const g of arr) {
+        g.rows.sort((a, b) =>
+          newestFirst ? b.txnDate.localeCompare(a.txnDate) : a.txnDate.localeCompare(b.txnDate),
+        );
+      }
+      arr.sort((a, b) => compareGroupDates(a, b, newestFirst));
     } else {
       arr.sort((a, b) => {
         const ia = blockOrder.indexOf(a.blockId);
@@ -202,6 +238,37 @@ export function MonthDetailPage() {
       }),
     [groups],
   );
+
+  // The table view is one flat ledger with no blocks to sort within, so it
+  // sorts globally: by amount or by date across the whole month. Custom order
+  // has no global meaning, so it falls back to the block order you dragged —
+  // the accordions unrolled, oldest first inside each block.
+  const flatRows = useMemo(() => {
+    const rows = [...filtered];
+    switch (sortMode) {
+      case 'desc':
+        rows.sort((a, b) => b.amount - a.amount);
+        break;
+      case 'asc':
+        rows.sort((a, b) => a.amount - b.amount);
+        break;
+      case 'dateDesc':
+        rows.sort((a, b) => b.txnDate.localeCompare(a.txnDate) || b.amount - a.amount);
+        break;
+      case 'dateAsc':
+        rows.sort((a, b) => a.txnDate.localeCompare(b.txnDate) || b.amount - a.amount);
+        break;
+      default: {
+        const rank = new Map(groups.map((g, i) => [g.blockId, i]));
+        rows.sort(
+          (a, b) =>
+            (rank.get(a.blockId) ?? 0) - (rank.get(b.blockId) ?? 0) ||
+            a.txnDate.localeCompare(b.txnDate),
+        );
+      }
+    }
+    return rows;
+  }, [filtered, sortMode, groups]);
 
   const { label, year } = formatMonthKey(monthKey);
   // Neighbouring months. No bounds: any real month opens, so stepping into a
@@ -529,19 +596,29 @@ export function MonthDetailPage() {
             </Select>
             <Select
               compact
-              aria-label="Sort groups"
+              aria-label={viewMode === 'table' ? 'Sort transactions' : 'Sort groups'}
               value={sortMode}
-              onChange={(e) => setSortMode(e.target.value as 'custom' | 'desc' | 'asc')}
+              onChange={(e) => setSortMode(e.target.value as SortMode)}
             >
               <option value="custom">Custom order</option>
-              <option value="desc">Total: High → Low</option>
-              <option value="asc">Total: Low → High</option>
+              {/* The amount sorts rank block totals in the grouped views and
+                  individual transactions in the flat table — same idea, but
+                  the label shouldn't claim "total" when there isn't one. */}
+              <option value="desc">
+                {viewMode === 'table' ? 'Amount: High → Low' : 'Total: High → Low'}
+              </option>
+              <option value="asc">
+                {viewMode === 'table' ? 'Amount: Low → High' : 'Total: Low → High'}
+              </option>
+              <option value="dateDesc">Date: Newest → Oldest</option>
+              <option value="dateAsc">Date: Oldest → Newest</option>
             </Select>
             <div className={styles.viewToggle} role="group" aria-label="View mode">
               {(
                 [
                   ['detailed', 'Detailed', 'Every transaction, grouped by block'],
                   ['summary', 'Summary', 'Cumulative total per line item'],
+                  ['table', 'Table', 'Every transaction in one flat table, no grouping'],
                 ] as const
               ).map(([mode, text, title]) => (
                 <button
@@ -644,6 +721,77 @@ export function MonthDetailPage() {
           ) : groups.length === 0 ? (
             <Card className={styles.empty}>
               <p>{query ? `No transactions match “${query}”.` : 'No transactions this month yet.'}</p>
+            </Card>
+          ) : viewMode === 'table' ? (
+            /* Everything the detailed view holds, flattened into one raw
+               ledger — no accordions, nothing collapsed. Expenditure only,
+               like the summary view: the month's income sits in the stat
+               cards above and has no payment source to filter by. */
+            <Card padded={false} className={styles.rawCard}>
+              <div className={styles.rawScroll}>
+                <table className={styles.rawTable}>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Block</th>
+                      <th>Line item</th>
+                      <th>Source</th>
+                      <th>Note</th>
+                      <th className={styles.right}>Amount</th>
+                      <th>
+                        <span className={styles.srOnly}>Actions</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {flatRows.map((t) => (
+                      <tr key={t.id}>
+                        <td className={styles.date}>{formatLedgerDate(t.txnDate)}</td>
+                        <td className={styles.rawBlock}>
+                          <span
+                            className={`${styles.dot} ${
+                              t.blockType === 'INVESTMENT' ? styles.invest : styles.expense
+                            }`}
+                          />
+                          {t.blockName}
+                        </td>
+                        <td className={styles.category}>{t.lineItemName}</td>
+                        <td>
+                          <span className={styles.source}>{t.paymentSourceName}</span>
+                        </td>
+                        <td className={styles.note}>{t.description ?? '—'}</td>
+                        <td className={`${styles.right} ${styles.amount}`}>
+                          ₹{formatAmount(t.amount)}
+                        </td>
+                        <td className={styles.rowActions}>
+                          <IconButton label="Edit transaction" onClick={() => setEditing(t)}>
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            label="Delete transaction"
+                            variant="danger"
+                            onClick={() => handleDelete(t)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className={styles.rawFoot}>
+                    <tr>
+                      <td colSpan={5}>
+                        {flatRows.length} transaction{flatRows.length === 1 ? '' : 's'}
+                        {sourceName && ` · ${sourceName}`}
+                      </td>
+                      <td className={`${styles.right} ${styles.amount}`}>
+                        ₹{formatAmount(filteredTotal)}
+                      </td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </Card>
           ) : viewMode === 'summary' ? (
             /* Cumulative roll-up: one row per line item, this month's column of

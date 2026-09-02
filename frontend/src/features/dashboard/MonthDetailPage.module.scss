@@ -273,6 +273,76 @@
   }
 }
 
+// --- Flat "Table" view ------------------------------------------------------
+// The detailed view with every accordion unrolled: one row per transaction,
+// nothing to expand. Narrow screens scroll the table horizontally rather than
+// squeezing the columns, so the note and amount stay readable.
+.rawCard {
+  overflow: hidden; // clip the header + footer fills to the rounded corners
+}
+
+.rawScroll {
+  overflow-x: auto;
+}
+
+.rawTable {
+  width: 100%;
+  min-width: 46rem;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+
+  thead th {
+    padding: $space-2 $space-4;
+    background: var(--muted);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-size: $text-xs;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: $space-2 $space-4;
+    font-size: $text-sm;
+    border-bottom: 1px solid var(--border);
+    color: var(--foreground);
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background $duration-fast $ease-out;
+
+    &:hover {
+      background: rgba($color-accent, 0.03);
+    }
+  }
+}
+
+.rawBlock {
+  display: flex; // so the block-type dot keeps its size next to the name
+  align-items: center;
+  gap: $space-2;
+  font-size: $text-xs;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.rawFoot td {
+  padding: $space-3 $space-4;
+  background: var(--muted);
+  border-top: 1px solid var(--border);
+  font-size: $text-xs;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+.srOnly {
+  @include visually-hidden;
+}
+
 // --- Cumulative summary table -----------------------------------------------
 .summaryCard {
   overflow: hidden; // clip the row fills to the card's rounded corners
